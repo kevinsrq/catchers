@@ -1,0 +1,26 @@
+[package]
+name = "catchers"
+version = "0.1.0"
+edition = "2024"
+description = "High-performance Polars extension for Catch22 time-series features"
+license = "MIT"
+repository = "https://github.com/kevin/catchers"
+readme = "README.md"
+
+[lib]
+name = "catchers"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.26.0", features = ["extension-module", "abi3-py39"] }
+pyo3-polars = { version = "0.25.0", features = [
+    "derive",
+    "dtype-struct",
+    "dtype-array",
+] }
+serde = { version = "1", features = ["derive"] }
+polars = { version = "0.52.0", default-features = false }
+polars-arrow = { version = "0.52.0", default-features = false }
+num-traits = "0.2"
+realfft = "3.5.0"
+rustfft = "6.4.1"
