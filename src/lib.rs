@@ -8,6 +8,7 @@
 mod expressions;
 mod utils;
 pub mod catchers;
+pub mod feature_extraction;
 
 use pyo3::prelude::*;
 use pyo3_polars::PolarsAllocator;

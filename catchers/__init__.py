@@ -214,3 +214,237 @@ class CatchersNamespace:
 
     def pd_periodicity_wang_th0_01(self) -> pl.Expr:
         return self._register("pd_periodicity_wang_th0_01")
+
+
+@pl.api.register_expr_namespace("fresh")
+class FreshNamespace:
+    """Polars expression namespace for tsfresh-inspired features."""
+
+    def __init__(self, expr: pl.Expr):
+        self._expr = expr
+
+    def _register(self, name: str, kwargs: dict | None = None) -> pl.Expr:
+        return register_plugin_function(
+            args=[self._expr],
+            plugin_path=LIB,
+            function_name=name,
+            kwargs=kwargs,
+            is_elementwise=False,
+            returns_scalar=True,
+        )
+
+    def variance_larger_than_standard_deviation(self) -> pl.Expr:
+        return self._register("fresh_variance_larger_than_standard_deviation")
+
+    def ratio_beyond_r_sigma(self, r: float = 1.0) -> pl.Expr:
+        return self._register("fresh_ratio_beyond_r_sigma", {"r": r})
+
+    def large_standard_deviation(self, r: float = 0.25) -> pl.Expr:
+        return self._register("fresh_large_standard_deviation", {"r": r})
+
+    def symmetry_looking(self, r: float = 0.1) -> pl.Expr:
+        return self._register("fresh_symmetry_looking", {"r": r})
+
+    def has_duplicate_max(self) -> pl.Expr:
+        return self._register("fresh_has_duplicate_max")
+
+    def has_duplicate_min(self) -> pl.Expr:
+        return self._register("fresh_has_duplicate_min")
+
+    def has_duplicate(self) -> pl.Expr:
+        return self._register("fresh_has_duplicate")
+
+    def root_mean_square(self) -> pl.Expr:
+        return self._register("fresh_root_mean_square")
+
+    # --- Batch 3: Additional Statistics ---
+
+    def skewness(self) -> pl.Expr:
+        return self._register("fresh_skewness")
+
+    def kurtosis(self) -> pl.Expr:
+        return self._register("fresh_kurtosis")
+
+    def variation_coefficient(self) -> pl.Expr:
+        return self._register("fresh_variation_coefficient")
+
+    def abs_energy(self) -> pl.Expr:
+        return self._register("fresh_abs_energy")
+
+    def cid_ce(self, normalize: bool = True) -> pl.Expr:
+        return self._register("fresh_cid_ce", {"normalize": normalize})
+
+    def mean_abs_change(self) -> pl.Expr:
+        return self._register("fresh_mean_abs_change")
+
+    def mean_change(self) -> pl.Expr:
+        return self._register("fresh_mean_change")
+
+    def mean_second_derivative_central(self) -> pl.Expr:
+        return self._register("fresh_mean_second_derivative_central")
+
+    def absolute_sum_of_changes(self) -> pl.Expr:
+        return self._register("fresh_absolute_sum_of_changes")
+
+    def fft_coefficient(self, k: int, attr: str = "abs") -> pl.Expr:
+        return self._register("fresh_fft_coefficient", {"k": k, "attr": attr})
+
+    def fft_aggregated(self, agg_type: str = "centroid") -> pl.Expr:
+        return self._register("fresh_fft_aggregated", {"agg_type": agg_type})
+
+    def cwt_coefficient(self, width: float, index: int) -> pl.Expr:
+        return self._register("fresh_cwt_coefficient", {"width": width, "index": index})
+
+    def sample_entropy(self) -> pl.Expr:
+        return self._register("fresh_sample_entropy")
+
+    def binned_entropy(self, max_bins: int = 10) -> pl.Expr:
+        return self._register("fresh_binned_entropy", {"max_bins": max_bins})
+
+    def friedrich_coefficient(self, m: int = 1, r: int = 30, coeff_index: int = 0) -> pl.Expr:
+        return self._register("fresh_friedrich_coefficient", {"m": m, "r": r, "coeff_index": coeff_index})
+
+    # --- Batch 1: Basic Counts & Streaks ---
+
+    def count_above_mean(self) -> pl.Expr:
+        return self._register("fresh_count_above_mean")
+
+    def count_below_mean(self) -> pl.Expr:
+        return self._register("fresh_count_below_mean")
+
+    def longest_strike_above_mean(self) -> pl.Expr:
+        return self._register("fresh_longest_strike_above_mean")
+
+    def longest_strike_below_mean(self) -> pl.Expr:
+        return self._register("fresh_longest_strike_below_mean")
+
+    def percentage_of_reoccurring_values_to_all_values(self) -> pl.Expr:
+        return self._register("fresh_percentage_of_reoccurring_values_to_all_values")
+
+    def percentage_of_reoccurring_datapoints_to_all_datapoints(self) -> pl.Expr:
+        return self._register("fresh_percentage_of_reoccurring_datapoints_to_all_datapoints")
+
+    def sum_of_reoccurring_values(self) -> pl.Expr:
+        return self._register("fresh_sum_of_reoccurring_values")
+
+    def sum_of_reoccurring_data_points(self) -> pl.Expr:
+        return self._register("fresh_sum_of_reoccurring_data_points")
+
+    def ratio_value_number_to_time_series_length(self) -> pl.Expr:
+        return self._register("fresh_ratio_value_number_to_time_series_length")
+
+    # --- Batch 2: Locations & Peaks ---
+
+    def first_location_of_maximum(self) -> pl.Expr:
+        return self._register("fresh_first_location_of_maximum")
+
+    def last_location_of_maximum(self) -> pl.Expr:
+        return self._register("fresh_last_location_of_maximum")
+
+    def first_location_of_minimum(self) -> pl.Expr:
+        return self._register("fresh_first_location_of_minimum")
+
+    def last_location_of_minimum(self) -> pl.Expr:
+        return self._register("fresh_last_location_of_minimum")
+
+    def number_peaks(self, n: int = 1) -> pl.Expr:
+        return self._register("fresh_number_peaks", {"n": n})
+
+    
+    def index_mass_quantile(self, q: float = 0.5) -> pl.Expr:
+        return self._register("fresh_index_mass_quantile", {"q": q})
+
+    # --- Batch 4: Correlation ---
+
+    def agg_autocorrelation(self, f_agg: str = "mean", maxlag: int = 10) -> pl.Expr:
+        # Map f_agg to match_agg due to param names? No, kwargs uses struct field name.
+        return self._register("fresh_agg_autocorrelation", {"match_agg": f_agg, "maxlag": maxlag})
+
+    def partial_autocorrelation(self, lag: int = 1) -> pl.Expr:
+        return self._register("fresh_partial_autocorrelation", {"lag": lag})
+
+    # --- Batch 5: Dynamics ---
+
+    def time_reversal_asymmetry_statistic(self, lag: int = 1) -> pl.Expr:
+        return self._register("fresh_time_reversal_asymmetry_statistic", {"lag": lag})
+
+    def c3(self, lag: int = 1) -> pl.Expr:
+        return self._register("fresh_c3", {"lag": lag})
+
+    # --- Batch 6: Linear Trend ---
+
+    def linear_trend(self, attr: str = "slope") -> pl.Expr:
+        # attr: "slope", "intercept", "rvalue", "pvalue", "stderr"
+        return self._register("fresh_linear_trend", {"attr": attr})
+
+    # --- Batch 7: Counts & Ranges ---
+
+    def number_crossing_m(self, m: float = 0.0) -> pl.Expr:
+        return self._register("fresh_number_crossing_m", {"m": m})
+
+    def range_count(self, min: float = -1.0, max: float = 1.0) -> pl.Expr:
+        return self._register("fresh_range_count", {"min": min, "max": max})
+
+    def value_count(self, value: float = 0.0) -> pl.Expr:
+        return self._register("fresh_value_count", {"value": value})
+
+    # --- Batch 8: Distribution Tests ---
+
+    def symmetry_looking(self, r: float = 0.05) -> pl.Expr:
+        return self._register("fresh_symmetry_looking", {"r": r})
+
+    def large_standard_deviation(self, r: float = 0.25) -> pl.Expr:
+        return self._register("fresh_large_standard_deviation", {"r": r})
+
+    def quantile(self, q: float = 0.5) -> pl.Expr:
+        return self._register("fresh_quantile", {"q": q})
+
+    def ratio_beyond_r_sigma(self, r: float = 2.0) -> pl.Expr:
+        return self._register("fresh_ratio_beyond_r_sigma", {"r": r})
+
+    def catch_all(self) -> pl.Expr:
+        """Calculates a set of essential tsfresh features. 
+        Compatible with df.rolling(w).agg(pl.col("x").fresh.catch_all()) if unnested."""
+        feats = {
+            "abs_energy": self.abs_energy(),
+            "root_mean_square": self.root_mean_square(),
+            "mean_abs_change": self.mean_abs_change(),
+            "mean_change": self.mean_change(),
+            "cid_ce": self.cid_ce(),
+            "sample_entropy": self.sample_entropy(),
+            "has_duplicate": self.has_duplicate(),
+            "variance_larger_std": self.variance_larger_than_standard_deviation(),
+            "fft_centroid": self.fft_aggregated(agg_type="centroid"),
+            "fft_variance": self.fft_aggregated(agg_type="variance"),
+            "friedrich_coeff_0": self.friedrich_coefficient(coeff_index=0),
+            "friedrich_coeff_1": self.friedrich_coefficient(coeff_index=1),
+            # Batch 1
+            "count_above_mean": self.count_above_mean(),
+            "count_below_mean": self.count_below_mean(),
+            "longest_strike_above_mean": self.longest_strike_above_mean(),
+            "percentage_reoccurring": self.percentage_of_reoccurring_values_to_all_values(),
+            # Batch 2
+            "first_loc_max": self.first_location_of_maximum(),
+            "number_peaks_n1": self.number_peaks(n=1),
+            "mass_quantile_50": self.index_mass_quantile(q=0.5),
+            # Batch 3
+            "skewness": self.skewness(),
+            "kurtosis": self.kurtosis(),
+            "variation_coefficient": self.variation_coefficient(),
+            # Batch 4
+            "autocorr_mean_lag10": self.agg_autocorrelation(f_agg="mean", maxlag=10),
+            "partial_autocorr_lag1": self.partial_autocorrelation(lag=1),
+            # Batch 5
+            "time_rev_asym_lag1": self.time_reversal_asymmetry_statistic(lag=1),
+            "c3_lag1": self.c3(lag=1),
+            # Batch 6
+            "linear_trend_slope": self.linear_trend(attr="slope"),
+            # Batch 7
+            "number_crossing_0": self.number_crossing_m(m=0.0),
+            # Batch 8
+            "quantile_05": self.quantile(q=0.05),
+            "quantile_95": self.quantile(q=0.95),
+            "check_large_std": self.large_standard_deviation(r=0.25).cast(pl.Float64),
+            "check_symmetry": self.symmetry_looking(r=0.05).cast(pl.Float64),
+        }
+        return pl.struct(**feats)

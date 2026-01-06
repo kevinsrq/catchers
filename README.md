@@ -1,83 +1,74 @@
-# catchers 🦀📊
+# catchers
 
-`catchers` is a high-performance **Polars extension** that implements the [catch22](https://time-series-features.gitbook.io/catch22/) (CAnonical Time-series CHaracteristics) feature set.
+`catchers` is a high-performance **Polars extension** that implements:
+1.  The **catch22** (CAnonical Time-series CHaracteristics) feature set.
+2.  A comprehensive subset of **tsfresh** (Time Series FeatuRe Extraction on Basis of Scalable Hypothesis tests) features.
 
-Designed for speed and ease of use, it allows you to extract 22 essential time-series features directly within your Polars pipelines.
+Designed for speed and ease of use, it allows you to extract essential time-series features directly within your Polars pipelines using optimized Rust implementations.
 
 ## Features
 
-- **🚀 Native Performance**: Implemented in Rust for maximum efficiency.
-- **⚡ Polars Integration**: Works seamlessly as a Polars Expression Namespace.
-- **🎁 catch_all()**: Calculate all 22 canonical features in a single call.
-- **🏷️ Official Short Names**: Access features using the standard Catch22 short names (`mode_5`, `dfa`, `acf_timescale`, etc.).
-- **🔧 Customizable**: Flexible parameters for individual features if you need to go beyond the defaults.
-
-## Inspired By
-
-This project is inspired by and builds upon the excellent work of:
-
-- [pycatch22](https://github.com/DynamicsAndNeuralSystems/pycatch22): The official Python implementation.
-- [catch22_rs](https://github.com/irazza/catch22_rs): A Rust implementation of Catch22 features.
-
-## Installation
-
-This project is optimized for use with [uv](https://github.com/astral-sh/uv).
-
-```bash
-# Clone the repository
-git clone https://github.com/kevin/catchers
-cd catchers
-
-# Build and install for development
-uv run maturin develop
-```
+- **Native Performance**: Implemented in Rust for maximum efficiency.
+- **Polars Integration**: Works seamlessly as a Polars Expression Namespace.
+- **Dual Namespaces**:
+    - `.catchers`: Access the 22 canonical catch22 features.
+    - `.fresh`: Access a wide range of tsfresh features (stats, entropy, dynamics, correlation, etc.).
+- **catch_all()**: Calculate feature sets in a single call for either namespace.
+- **Customizable**: Flexible parameters for individual features.
 
 ## Usage
 
-Access the features through the `.catchers` namespace on any Polars expression.
+Access the features through the `.catchers` or `.fresh` namespaces on any Polars expression.
 
-### Basic Examples
+### Catch22 Examples
 
 ```python
 import polars as pl
 import catchers
 
-# Sample data
 df = pl.DataFrame({
     "id": ["A", "A", "B", "B"],
     "val": [1.0, 2.0, 5.0, 4.0]
 })
 
-# Calculate individual features
-result = df.select(
+# Individual features
+df.select(
     pl.col("val").catchers.mode_5().alias("mode"),
     pl.col("val").catchers.dfa().alias("dfa")
 )
 
-# Calculate ALL 22 features grouped by ID
-full_results = (
-    df.group_by("id")
-    .agg(pl.col("val").catchers.catch_all())
-    .unnest("val") # catch_all returns a Struct
-)
-
-print(full_results)
+# All catch22 features
+df.group_by("id").agg(
+    pl.col("val").catchers.catch_all()
+).unnest("val")
 ```
 
-### Tips
->
-> [!NOTE]
-> Catch22 features are designed to be calculated on **z-scored** time-series data to focus on the time-ordering properties rather than raw values.
+### TSFresh Examples
 
 ```python
-# Canonical way to use catchers
+import polars as pl
+import catchers
+
+df = pl.DataFrame({
+    "x": [10.0, 12.0, 15.0, 14.0, 10.0, 12.0]
+})
+
+# Individual features
 df.select(
-    ((pl.col("val") - pl.col("val").mean()) / pl.col("val").std())
-    .catchers.catch_all()
+    pl.col("x").fresh.skewness(),
+    pl.col("x").fresh.number_peaks(n=1),
+    pl.col("x").fresh.c3(lag=1)
 )
+
+# Comprehensive feature set
+df.select(
+    pl.col("x").fresh.catch_all()
+).unnest("x")
 ```
 
-## Available Features (Short Names)
+## Available Features
+
+### Catch22 (`.catchers`)
 
 | Short Name | Description |
 | :--- | :--- |
@@ -103,6 +94,21 @@ df.select(
 | `embedding_dist` | Exponential fit to embedding distance |
 | `rs_range` | Rescaled range fluctuation analysis |
 | `dfa` | Detrended fluctuation analysis |
+
+### TSFresh (`.fresh`)
+
+The `.fresh` namespace covers a wide range of feature categories:
+
+*   **Basic Counts**: `count_above_mean`, `count_below_mean`, `longest_strike_above_mean`, `percentage_reoccurring`, etc.
+*   **Locations & Peaks**: `first_location_of_maximum`, `number_peaks`, `mass_quantile`.
+*   **Statistics**: `skewness`, `kurtosis`, `variation_coefficient`, `mean`, `variance`.
+*   **Correlation**: `agg_autocorrelation`, `partial_autocorrelation`.
+*   **Dynamics**: `time_reversal_asymmetry_statistic`, `c3` (non-linearity), `mean_abs_change`.
+*   **Linear Trend**: `linear_trend` (slope, intercept, r-value).
+*   **Counts & Ranges**: `number_crossing_m`, `range_count`, `value_count`.
+*   **Distribution Tests**: `symmetry_looking`, `large_standard_deviation`, `quantile`, `ratio_beyond_r_sigma`.
+*   **Entropy & Complexity**: `sample_entropy`, `binned_entropy`, `approximate_entropy`, `cid_ce`, `abs_energy`.
+*   **Spectral**: `fft_aggregated` (centroid, variance, skew, kurtosis), `fft_coefficient`.
 
 ## License
 
