@@ -297,9 +297,7 @@ pub fn co_trev_1_num(a: &[f64]) -> f64 {
         diff_temp[i] = (a[i + 1] - a[i]).powi(3);
     }
 
-    let out = mean(&diff_temp);
-
-    out
+    mean(&diff_temp)
 }
 
 /// Forecasting - Local Simple Mean Ratio (FC_LocalSimple_mean1_tauresrat).
@@ -321,8 +319,7 @@ pub fn fc_local_simple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
     let res_ac1st_z = first_zero(&res, res.len()) as f64;
     let y_ac1st_z = first_zero(a, a.len()) as f64;
 
-    let out = res_ac1st_z / y_ac1st_z;
-    out
+    res_ac1st_z / y_ac1st_z
 }
 
 /// Forecasting - Local Simple Mean Std Err (FC_LocalSimple_mean3_stderr).
@@ -341,8 +338,7 @@ pub fn fc_local_simple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
         res[i] = a[i + train_length] - yest;
     }
 
-    let out = std_dev(&res);
-    out
+    std_dev(&res)
 }
 
 /// Information - Auto Mutual Information (IN_AutoMutualInfoStats_40_gaussian_fmmi).
