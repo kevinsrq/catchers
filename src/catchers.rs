@@ -115,7 +115,7 @@ pub fn dn_histogram_mode_n(a: &[f64], n_bins: usize) -> f64 {
         }
     }
 
-    return res / num_maxs as f64;
+    res / num_maxs as f64
 }
 
 /// Correlation - Embedding Distance (CO_Embed2_Dist_tau_d_expfit_meandiff).
@@ -163,7 +163,7 @@ pub fn co_embed2_dist_tau_d_expfit_meandiff(a: &[f64]) -> f64 {
         d_expfit_diff[i] = (hist_counts_norm[i] - expf).abs();
     }
 
-    return mean(&d_expfit_diff[..n_bins]);
+    mean(&d_expfit_diff[..n_bins])
 }
 
 /// Correlation - First 1/e Crossing of Autocorrelation (CO_f1ecac).
@@ -185,7 +185,7 @@ pub fn co_f1ecac(a: &[f64]) -> f64 {
             return out;
         }
     }
-    return out;
+    out
 }
 
 /// Correlation - First Minimum of Autocorrelation (CO_FirstMin_ac).
@@ -203,7 +203,7 @@ pub fn co_first_min_ac(a: &[f64]) -> f64 {
         }
     }
 
-    return min_ind as f64;
+    min_ind as f64
 }
 
 /// Correlation - Histogram AMI Even (CO_HistogramAMI_even_2_5).
@@ -214,10 +214,8 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
     let mut y1 = vec![0.0; a.len() - tau];
     let mut y2 = vec![0.0; a.len() - tau];
 
-    for i in 0..a.len() - tau {
-        y1[i] = a[i];
-        y2[i] = a[i + tau];
-    }
+    y1.copy_from_slice(&a[..a.len() - tau]);
+    y2.copy_from_slice(&a[tau..]);
 
     let max_val = max_(a);
     let min_val = min_(a);
@@ -226,8 +224,8 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
 
     let mut bin_edges = vec![0.0; n_bins + 1];
 
-    for i in 0..n_bins + 1 {
-        bin_edges[i] = min_val + (i as f64 * bin_step) - 0.1;
+    for (i, val) in bin_edges.iter_mut().enumerate().take(n_bins + 1) {
+        *val = min_val + (i as f64 * bin_step) - 0.1;
     }
 
     let bins1 = histbinassign(&y1, &bin_edges);
@@ -240,8 +238,8 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         bins12[i] = ((bins1[i] - 1) * (n_bins + 1) + bins2[i]) as f64;
     }
 
-    for i in 0..(n_bins + 1) * (n_bins + 1) {
-        bin_edges12[i] = (i + 1) as f64;
+    for (i, val) in bin_edges12.iter_mut().enumerate().take((n_bins + 1) * (n_bins + 1)) {
+        *val = (i + 1) as f64;
     }
 
     let joint_hist_linear = histcount_edges(&bins12, &bin_edges12);
@@ -259,9 +257,9 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         }
     }
 
-    for i in 0..n_bins {
-        for j in 0..n_bins {
-            pij[j][i] /= sum_bins;
+    for col in &mut pij {
+        for val in col.iter_mut() {
+            *val /= sum_bins;
         }
     }
 
@@ -284,7 +282,7 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         }
     }
 
-    return ami;
+    ami
 }
 
 /// Correlation - Time Reversibility (CO_trev_1_num).
@@ -301,7 +299,7 @@ pub fn co_trev_1_num(a: &[f64]) -> f64 {
 
     let out = mean(&diff_temp);
 
-    return out;
+    out
 }
 
 /// Forecasting - Local Simple Mean Ratio (FC_LocalSimple_mean1_tauresrat).
@@ -324,7 +322,7 @@ pub fn fc_local_simple_mean_tauresrat(a: &[f64], train_length: usize) -> f64 {
     let y_ac1st_z = first_zero(a, a.len()) as f64;
 
     let out = res_ac1st_z / y_ac1st_z;
-    return out;
+    out
 }
 
 /// Forecasting - Local Simple Mean Std Err (FC_LocalSimple_mean3_stderr).
@@ -344,7 +342,7 @@ pub fn fc_local_simple_mean_stderr(a: &[f64], train_length: usize) -> f64 {
     }
 
     let out = std_dev(&res);
-    return out;
+    out
 }
 
 /// Information - Auto Mutual Information (IN_AutoMutualInfoStats_40_gaussian_fmmi).
@@ -359,9 +357,9 @@ pub fn in_auto_mutual_info_stats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
 
     let mut ami = vec![0.0; a.len()];
 
-    for i in 0..tau as usize {
+    for (i, val) in ami.iter_mut().enumerate().take(tau as usize) {
         let ac = autocorr_lag(a, i + 1);
-        ami[i] = -0.5 * (1.0 - ac * ac).ln();
+        *val = -0.5 * (1.0 - ac * ac).ln();
     }
 
     let mut fmmi = tau;
@@ -372,7 +370,7 @@ pub fn in_auto_mutual_info_stats_tau_gaussian_fmmi(a: &[f64], tau: f64) -> f64 {
             break;
         }
     }
-    return fmmi;
+    fmmi
 }
 
 /// Medical - HRV Classic pNN (MD_hrv_classic_pnn40).
@@ -383,13 +381,13 @@ pub fn md_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
 
     let mut pnn40 = 0.0;
 
-    for i in 0..a.len() - 1 {
-        if d_y[i].abs() * 1000.0 > pnn as f64 {
+    for val in d_y.iter().take(a.len() - 1) {
+        if val.abs() * 1000.0 > pnn as f64 {
             pnn40 += 1.0;
         }
     }
 
-    return pnn40 / (a.len() - 1) as f64;
+    pnn40 / (a.len() - 1) as f64
 }
 
 /// Symbol - Binary Stats Diff Longstretch0 (SB_BinaryStats_diff_longstretch0).
@@ -398,20 +396,20 @@ pub fn md_hrv_classic_pnn(a: &[f64], pnn: usize) -> f64 {
 pub fn sb_binary_stats_diff_longstretch0(a: &[f64]) -> f64 {
     let mut y_bin = vec![0; a.len() - 1];
 
-    for i in 0..a.len() - 1 {
+    for (i, val) in y_bin.iter_mut().enumerate().take(a.len() - 1) {
         let diff_temp = a[i + 1] - a[i];
         if diff_temp < 0.0 {
-            y_bin[i] = 0
+            *val = 0
         } else {
-            y_bin[i] = 1
+            *val = 1
         }
     }
 
     let mut max_stretch = 0;
     let mut last1 = 0;
 
-    for i in 0..a.len() - 1 {
-        if y_bin[i] == 1 || i == a.len() - 2 {
+    for (i, &val) in y_bin.iter().enumerate().take(a.len() - 1) {
+        if val == 1 || i == a.len() - 2 {
             let stretch = i - last1;
 
             if stretch > max_stretch {
@@ -422,7 +420,7 @@ pub fn sb_binary_stats_diff_longstretch0(a: &[f64]) -> f64 {
         }
     }
 
-    return max_stretch as f64;
+    max_stretch as f64
 }
 
 /// Symbol - Binary Stats Mean Longstretch1 (SB_BinaryStats_mean_longstretch1).
@@ -431,19 +429,19 @@ pub fn sb_binary_stats_diff_longstretch0(a: &[f64]) -> f64 {
 pub fn sb_binary_stats_mean_longstretch1(a: &[f64]) -> f64 {
     let mut y_bin = vec![0; a.len() - 1];
     let a_mean = mean(a);
-    for i in 0..a.len() - 1 {
+    for (i, val) in y_bin.iter_mut().enumerate().take(a.len() - 1) {
         if a[i] - a_mean <= 0.0 {
-            y_bin[i] = 0
+            *val = 0
         } else {
-            y_bin[i] = 1
+            *val = 1
         }
     }
 
     let mut max_stretch = 0;
     let mut last1 = 0;
 
-    for i in 0..a.len() - 1 {
-        if y_bin[i] == 0 || i == a.len() - 2 {
+    for (i, &val) in y_bin.iter().enumerate().take(a.len() - 1) {
+        if val == 0 || i == a.len() - 2 {
             let stretch = i - last1;
 
             if stretch > max_stretch {
@@ -454,7 +452,7 @@ pub fn sb_binary_stats_mean_longstretch1(a: &[f64]) -> f64 {
         }
     }
 
-    return max_stretch as f64;
+    max_stretch as f64
 }
 
 /// Symbol - Motif Three Quantile HH (SB_MotifThree_quantile_hh).
@@ -464,18 +462,18 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
     let alphabet_size = 3;
     let yt = coarsegrain(a, alphabet_size);
 
-    let mut r1 = vec![Vec::with_capacity(a.len()); alphabet_size];
-    for i in 0..alphabet_size {
-        for j in 0..a.len() {
-            if yt[j] == i + 1 {
-                r1[i].push(j);
+    let mut r1: Vec<Vec<usize>> = (0..alphabet_size).map(|_| Vec::with_capacity(a.len())).collect();
+    for (i, vec_r1) in r1.iter_mut().enumerate().take(alphabet_size) {
+        for (j, &val) in yt.iter().enumerate().take(a.len()) {
+            if val == i + 1 {
+                vec_r1.push(j);
             }
         }
     }
 
-    for i in 0..alphabet_size {
-        if r1[i].last() == Some(&(a.len() - 1)) {
-            r1[i].pop();
+    for vec_r1 in r1.iter_mut().take(alphabet_size) {
+        if vec_r1.last() == Some(&(a.len() - 1)) {
+            vec_r1.pop();
         }
     }
 
@@ -496,10 +494,10 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
     }
 
     let mut hh = 0.0;
-    for i in 0..alphabet_size {
-        hh += f_entropy(&out2[i]);
+    for val in out2.iter().take(alphabet_size) {
+        hh += f_entropy(val);
     }
-    return hh;
+    hh
 }
 
 /// Scaling - Fluctuation Analysis (SC_FluctAnal_2_50_1_logi_prop_r1_dfa / rsrangefit).
@@ -542,8 +540,8 @@ fn fa_generate_tau(n: usize) -> (Vec<f64>, usize) {
     let tau_step = (lin_high - lin_low) / (n_tau_steps - 1) as f64;
 
     let mut tau = vec![0.0; n_tau_steps];
-    for i in 0..n_tau_steps {
-        tau[i] = (lin_low + i as f64 * tau_step).exp().round();
+    for (i, val) in tau.iter_mut().enumerate().take(n_tau_steps) {
+        *val = (lin_low + i as f64 * tau_step).exp().round();
     }
 
     let mut n_tau = n_tau_steps;
@@ -590,8 +588,8 @@ fn fa_compute_f(y_cs: &[f64], tau: &[f64], n_tau: usize, x_reg_buffer: &[f64], h
             let (m, b) = linreg(t_i, &x_reg_buffer[..t_i], y_slice);
 
             buffer.clear();
-            for k in 0..t_i {
-                 buffer.push(y_slice[k] - (m * (k + 1) as f64 + b));
+            for (k, &val) in y_slice.iter().enumerate().take(t_i) {
+                 buffer.push(val - (m * (k + 1) as f64 + b));
             }
 
             match how {
@@ -628,7 +626,7 @@ fn fa_fit_log_log(tau: &[f64], f: &[f64], n_tau: usize) -> f64 {
 
     let min_points = 6;
     let nsserr = n_tau - 2 * min_points + 1;
-    if nsserr <= 0 { return 0.0; } // Safety check
+    if nsserr == 0 { return 0.0; } // Safety check
 
     let mut sserr = vec![0.0; nsserr];
     // Buffer for linreg residuals
@@ -709,7 +707,7 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
                 // Corrected logic: area_5_1 likely refers to power in period range [1, 5] (Hz [0.2, 1.0])
                 // w is angular frequency = 2*pi*f
                 let f_val = w[i] / (2.0 * std::f64::consts::PI);
-                if f_val >= 0.2 && f_val <= 1.0 { 
+                if (0.2..=1.0).contains(&f_val) { 
                     area_5_1 += sw[i];
                 }
             }
@@ -753,20 +751,20 @@ pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
         }
     }
 
-    for i in 0..num_groups {
-        for j in 0..num_groups {
-            t[i][j] /= (n_down - 1) as f64;
+    for row in t.iter_mut().take(num_groups) {
+        for val in row.iter_mut().take(num_groups) {
+            *val /= (n_down - 1) as f64;
         }
     }
 
     let cm = covariance_matrix(t);
     let mut diag_sum = 0.0;
 
-    for i in 0..num_groups {
-        diag_sum += cm[i][i];
+    for (i, row) in cm.iter().enumerate().take(num_groups) {
+        diag_sum += row[i];
     }
 
-    return diag_sum;
+    diag_sum
 }
 
 /// Periodicity - Wang Threshold 0.01 (PD_PeriodicityWang_th0_01).
@@ -817,13 +815,12 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
 
     let mut out = 0.0;
 
-    for i in 0..n_peaks {
-        let i_peak = peaks[i];
+    for &i_peak in peaks.iter().take(n_peaks) {
         let the_peak = acf[i_peak as usize];
 
         let mut j: isize = -1;
 
-        while (j + 1) < n_troughs as isize && troughs[(j + 1) as usize] < i_peak as f64 {
+        while (j + 1) < n_troughs as isize && troughs[(j + 1) as usize] < i_peak {
             j += 1;
         }
 
@@ -842,9 +839,9 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
             continue;
         }
 
-        out = i_peak as f64;
+        out = i_peak;
         break;
     }
 
-    return out;
+    out
 }

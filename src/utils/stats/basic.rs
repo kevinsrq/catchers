@@ -15,7 +15,7 @@ pub fn median(a: &[f64]) -> f64 {
     let mut c = a.to_vec();
     c.sort_by(|a, b| a.partial_cmp(b).unwrap());
     let mid = c.len() / 2;
-    if c.len() % 2 == 0 { (c[mid - 1] + c[mid]) / 2.0 } else { c[mid] }
+    if c.len().is_multiple_of(2) { (c[mid - 1] + c[mid]) / 2.0 } else { c[mid] }
 }
 
 /// Returns the maximum value in a slice.
@@ -83,8 +83,8 @@ pub fn covariance_matrix(matrix: Vec<Vec<f64>>) -> Vec<Vec<f64>> {
     for i in 0..rows {
         for j in 0..rows {
              let mut sum = 0.0;
-             for k in 0..cols {
-                 sum += (matrix[i][k] - means[i]) * (matrix[j][k] - means[j]);
+             for (&val_i, &val_j) in matrix[i].iter().zip(matrix[j].iter()).take(cols) {
+                 sum += (val_i - means[i]) * (val_j - means[j]);
              }
              cov[i][j] = sum / (cols.saturating_sub(1) as f64).max(1.0);
         }

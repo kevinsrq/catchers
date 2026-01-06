@@ -26,7 +26,7 @@ pub fn histcounts(a: &[f64], n_bins: usize) -> (Vec<usize>, Vec<f64>) {
     let mut edges = vec![0.0; n_bins + 1];
     if n_bins == 0 { return (counts, edges); }
     let step = (max_v - min_v) / n_bins as f64;
-    for i in 0..=n_bins { edges[i] = min_v + i as f64 * step; }
+    for (i, val) in edges.iter_mut().enumerate().take(n_bins + 1) { *val = min_v + i as f64 * step; }
     edges[n_bins] = max_v + 1e-10; 
     for &x in a {
         for i in 0..n_bins {

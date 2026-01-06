@@ -39,8 +39,8 @@ pub fn first_zero_core(a: &[f64], max_tau: usize) -> usize {
     let ac = autocorr(a); // Uses FFT-based autocorr
     let limit = std::cmp::min(max_tau, ac.len());
     let mut zero_cross_ind = 0;
-    for i in 0..limit {
-        if ac[i] <= 0.0 { break; }
+    for &val in ac.iter().take(limit) {
+        if val <= 0.0 { break; }
         zero_cross_ind += 1;
     }
     zero_cross_ind
@@ -120,7 +120,7 @@ pub fn welch(signal: &[f64], fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
         for j in 0..=nperseg / 2 {
              let amp = buffer[j].norm_sqr();
              let mut scale = scale_factor;
-             if j == 0 || (nperseg % 2 == 0 && j == nperseg / 2) {
+             if j == 0 || (nperseg.is_multiple_of(2) && j == nperseg / 2) {
                  scale /= 2.0;
              }
              psd_acc[j] += amp * scale;
@@ -135,8 +135,8 @@ pub fn welch(signal: &[f64], fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
     
     let mut freqs = vec![0.0; nperseg / 2 + 1];
     let df = fs / nperseg as f64;
-    for i in 0..=nperseg / 2 {
-        freqs[i] = i as f64 * df;
+    for (i, val) in freqs.iter_mut().enumerate().take(nperseg / 2 + 1) {
+        *val = i as f64 * df;
     }
     
     (psd_acc, freqs)
@@ -169,7 +169,7 @@ pub fn autocorr(a: &[f64]) -> Vec<f64> {
 
     // Compute PSD (Conj multiplication)
     for c in buffer.iter_mut() {
-        *c = *c * c.conj();
+        *c *= c.conj();
     }
 
     ifft.process(&mut buffer);
@@ -188,8 +188,8 @@ pub fn autocorr(a: &[f64]) -> Vec<f64> {
         return vec![0.0; n];
     }
 
-    for i in 0..n {
-        let val = (buffer[i].re * scale) / n as f64; // Biased autocorrelation
+    for buffer_item in buffer.iter().take(n) {
+        let val = (buffer_item.re * scale) / n as f64; // Biased autocorrelation
         ac.push(val / var);
     }
     
