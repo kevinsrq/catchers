@@ -1,5 +1,5 @@
 use crate::utils::stats::basic::{mean, std_dev, median, max_, min_};
-use polars::prelude::*;
+
 
 /// Is variance higher than the standard deviation?
 pub fn variance_larger_than_standard_deviation(x: &[f64]) -> bool {

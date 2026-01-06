@@ -1,5 +1,5 @@
 use polars::prelude::*;
-use crate::utils::stats::basic::{mean, std_dev};
+use crate::utils::stats::basic::mean;
 
 // ==============================================================================
 // 2. Estatística e Regressão
@@ -9,6 +9,7 @@ use crate::utils::stats::basic::{mean, std_dev};
 ///
 /// Returns (slope, intercept).
 /// Note: Indexes are assumed to be 0..n-1.
+#[allow(dead_code)]
 pub fn linreg<T>(ca: &ChunkedArray<T>) -> PolarsResult<(f64, f64)>
 where
     T: PolarsNumericType,
@@ -45,6 +46,7 @@ where
 }
 
 /// Calculates the slope of a linear regression on a Polars ChunkedArray.
+#[allow(dead_code)]
 pub fn slope<T>(ca: &ChunkedArray<T>) -> PolarsResult<f64>
 where
     T: PolarsNumericType,

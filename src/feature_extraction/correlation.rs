@@ -1,5 +1,5 @@
 use crate::utils::stats::signal::autocorr;
-use crate::utils::stats::basic::{mean, std_dev, median};
+use crate::utils::stats::basic::{mean, median};
 
 /// Calculates the value of an aggregation function f_agg (e.g. the variance or the mean) 
 /// over the autocorrelation R(l) for different lags.

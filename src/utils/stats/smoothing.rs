@@ -3,12 +3,13 @@
 //! Includes Cubic Hermite Spline implementation.
 
 use polars::prelude::*;
-use crate::utils::stats::basic::{mean, std_dev};
+use crate::utils::stats::basic::mean;
 
 /// Fits a generic Cubic Hermite Spline.
 ///
 /// This is a simplified implementation tailored for specific periodicity checks.
 /// Returns a Series containing the fitted values.
+#[allow(dead_code)]
 pub fn splinefit<T>(ca: &ChunkedArray<T>) -> PolarsResult<Series>
 where
     T: PolarsNumericType,

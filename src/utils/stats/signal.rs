@@ -10,6 +10,7 @@ use crate::utils::stats::basic::mean;
 /// Calculates the first index where the autocorrelation crosses zero.
 /// Useful for determining the natural "lag" of a time series.
 /// Optimized to reuse the core autocorrelation logic.
+#[allow(dead_code)]
 pub fn first_zero<T>(ca: &ChunkedArray<T>, max_tau: usize) -> PolarsResult<usize>
 where
     T: PolarsNumericType,
@@ -47,6 +48,7 @@ pub fn first_zero_core(a: &[f64], max_tau: usize) -> usize {
 
 /// Power Spectral Density Estimation (Welch's Method).
 /// Returns a DataFrame with "frequency" and "power" columns.
+#[allow(dead_code)]
 pub fn welch_psd<T>(ca: &ChunkedArray<T>, fs: f64) -> PolarsResult<DataFrame>
 where
     T: PolarsNumericType,
@@ -226,6 +228,7 @@ pub fn autocov_lag(a: &[f64], tau: usize) -> f64 {
     num / a.len() as f64
 }
 
+#[allow(dead_code)]
 fn autocorr_polars<T>(ca: &ChunkedArray<T>) -> PolarsResult<Series>
 where
     T: PolarsNumericType,

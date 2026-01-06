@@ -148,10 +148,6 @@ struct ValueKwargs {
     value: f64,
 }
 
-#[derive(Deserialize)]
-struct RatioKwargs {
-    r: f64,
-}
 
 #[derive(Deserialize)]
 struct QuantileKwargs {
