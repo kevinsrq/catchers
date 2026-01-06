@@ -9,7 +9,7 @@ from polars.plugins import register_plugin_function
 from catchers._internal import __version__ as __version__
 
 if TYPE_CHECKING:
-    from catchers.typing import IntoExprColumn
+    from catchers.typing import IntoExprColumn as IntoExprColumn
 
 LIB = Path(__file__).parent
 
@@ -388,19 +388,10 @@ class FreshNamespace:
     def value_count(self, value: float = 0.0) -> pl.Expr:
         return self._register("fresh_value_count", {"value": value})
 
-    # --- Batch 8: Distribution Tests ---
-
-    def symmetry_looking(self, r: float = 0.05) -> pl.Expr:
-        return self._register("fresh_symmetry_looking", {"r": r})
-
-    def large_standard_deviation(self, r: float = 0.25) -> pl.Expr:
-        return self._register("fresh_large_standard_deviation", {"r": r})
 
     def quantile(self, q: float = 0.5) -> pl.Expr:
         return self._register("fresh_quantile", {"q": q})
 
-    def ratio_beyond_r_sigma(self, r: float = 2.0) -> pl.Expr:
-        return self._register("fresh_ratio_beyond_r_sigma", {"r": r})
 
     def catch_all(self) -> pl.Expr:
         """Calculates a set of essential tsfresh features. 

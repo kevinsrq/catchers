@@ -4,7 +4,9 @@ use crate::utils::stats::basic::{max_, min_};
 
 /// Automatically calculates the number of bins using the Freedman-Diaconis rule.
 pub fn num_bins_auto(a: &[f64]) -> usize {
-    if a.len() < 2 { return 1; }
+    if a.len() < 2 {
+        return 1;
+    }
     let iqr = {
         let mut c = a.to_vec();
         c.sort_by(|a, b| a.partial_cmp(b).unwrap());
@@ -12,7 +14,9 @@ pub fn num_bins_auto(a: &[f64]) -> usize {
         let q3 = c[c.len() * 3 / 4];
         q3 - q1
     };
-    if iqr == 0.0 { return 1; }
+    if iqr == 0.0 {
+        return 1;
+    }
     let h = 2.0 * iqr * (a.len() as f64).powf(-1.0 / 3.0);
     let range = max_(a) - min_(a);
     (range / h).ceil() as usize
@@ -24,13 +28,17 @@ pub fn histcounts(a: &[f64], n_bins: usize) -> (Vec<usize>, Vec<f64>) {
     let max_v = max_(a);
     let mut counts = vec![0; n_bins];
     let mut edges = vec![0.0; n_bins + 1];
-    if n_bins == 0 { return (counts, edges); }
+    if n_bins == 0 {
+        return (counts, edges);
+    }
     let step = (max_v - min_v) / n_bins as f64;
-    for (i, val) in edges.iter_mut().enumerate().take(n_bins + 1) { *val = min_v + i as f64 * step; }
-    edges[n_bins] = max_v + 1e-10; 
+    for (i, val) in edges.iter_mut().enumerate().take(n_bins + 1) {
+        *val = min_v + i as f64 * step;
+    }
+    edges[n_bins] = max_v + 1e-10;
     for &x in a {
         for i in 0..n_bins {
-            if x >= edges[i] && x < edges[i+1] {
+            if x >= edges[i] && x < edges[i + 1] {
                 counts[i] += 1;
                 break;
             }
@@ -43,13 +51,19 @@ pub fn histcounts(a: &[f64], n_bins: usize) -> (Vec<usize>, Vec<f64>) {
 ///
 /// Returns a vector of bin indices.
 pub fn histbinassign(a: &[f64], edges: &[f64]) -> Vec<usize> {
-    a.iter().map(|&x| {
-        for i in 0..edges.len()-1 {
-            if x >= edges[i] && x < edges[i+1] { return i + 1; }
-        }
-        if x >= edges[edges.len()-1] - 1e-9 { return edges.len() - 1; }
-        0 
-    }).collect()
+    a.iter()
+        .map(|&x| {
+            for i in 0..edges.len() - 1 {
+                if x >= edges[i] && x < edges[i + 1] {
+                    return i + 1;
+                }
+            }
+            if x >= edges[edges.len() - 1] - 1e-9 {
+                return edges.len() - 1;
+            }
+            0
+        })
+        .collect()
 }
 
 /// Counts frequencies of pre-binned values using edges.
@@ -58,9 +72,9 @@ pub fn histbinassign(a: &[f64], edges: &[f64]) -> Vec<usize> {
 pub fn histcount_edges(bins: &[f64], edges: &[f64]) -> Vec<usize> {
     let mut counts = vec![0; edges.len() - 1];
     for &val in bins {
-        let v = val; 
-         for i in 0..edges.len()-1 {
-            if v >= edges[i] && v < edges[i+1] {
+        let v = val;
+        for i in 0..edges.len() - 1 {
+            if v >= edges[i] && v < edges[i + 1] {
                 counts[i] += 1;
                 break;
             }

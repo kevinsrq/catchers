@@ -7,12 +7,16 @@ pub fn abs_energy(x: &[f64]) -> f64 {
 
 /// Complexity-invariant distance estimate.
 pub fn cid_ce(x: &[f64], normalize: bool) -> f64 {
-    if x.len() < 2 { return 0.0; }
-    
+    if x.len() < 2 {
+        return 0.0;
+    }
+
     let working_x: Vec<f64>;
     let x_ref = if normalize {
         let s = std_dev(x);
-        if s == 0.0 { return 0.0; }
+        if s == 0.0 {
+            return 0.0;
+        }
         let m = mean(x);
         working_x = x.iter().map(|&v| (v - m) / s).collect();
         &working_x

@@ -13,14 +13,16 @@ pub fn ricker_wavelet(t: f64, scale: f64) -> f64 {
 /// This is a simplified version of CWT for the Ricker wavelet.
 /// In tsfresh, it's often used with specific widths.
 pub fn cwt_coefficient(x: &[f64], width: f64, index: usize) -> f64 {
-    if index >= x.len() { return f64::NAN; }
-    
+    if index >= x.len() {
+        return f64::NAN;
+    }
+
     // The wavelet is usually sampled over a finite range.
     // pywt uses a default length proportional to the scale.
     // For Ricker, +/- 10*scale is usually enough to capture the energy.
     let window_half = (10.0 * width).ceil() as isize;
     let mut sum = 0.0;
-    
+
     for offset in -window_half..=window_half {
         let x_idx = (index as isize + offset) as usize;
         if x_idx < x.len() {
@@ -31,8 +33,8 @@ pub fn cwt_coefficient(x: &[f64], width: f64, index: usize) -> f64 {
             sum += val * w;
         }
     }
-    
-    // Normalization: sum /= sqrt(width) ? 
+
+    // Normalization: sum /= sqrt(width) ?
     // pywt's normalization depends on the implementation.
     // Ricker wavelet defined above already has a 1/sqrt(scale) component.
     sum

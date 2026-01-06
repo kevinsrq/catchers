@@ -3,14 +3,18 @@
 //! Port of the catch22 time-series feature extraction library to Rust.
 //! Provides canonical time-series characteristics (catch22).
 
-use crate::utils::stats::signal::{first_zero_core as first_zero, autocorr, autocorr_lag, autocov_lag, welch};
-use crate::utils::stats::regression::linreg_slice as linreg;
-use crate::utils::stats::smoothing::splinefit_core;
 use std::f64;
 
-use crate::utils::stats::basic::{mean, median, max_, min_, std_dev, is_constant, diff, norm, coarsegrain, f_entropy, covariance_matrix};
-use crate::utils::stats::histogram::{num_bins_auto, histcounts, histbinassign, histcount_edges};
-
+use crate::utils::stats::basic::{
+    coarsegrain, covariance_matrix, diff, f_entropy, is_constant, max_, mean, median, min_, norm,
+    std_dev,
+};
+use crate::utils::stats::histogram::{histbinassign, histcount_edges, histcounts, num_bins_auto};
+use crate::utils::stats::regression::linreg_slice as linreg;
+use crate::utils::stats::signal::{
+    autocorr, autocorr_lag, autocov_lag, first_zero_core as first_zero, welch,
+};
+use crate::utils::stats::smoothing::splinefit_core;
 
 /// Distribution of Outliers (DN_OutlierInclude_n_001_mdrmd)
 ///
@@ -25,7 +29,7 @@ pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
     // If is_pos is true, we can just use reference or Cow?
     // Since we need to modify values (negate), we unfortunately need a copy or an iterator.
     // However, for max_ and filters we can use iterators.
-    
+
     // We'll use a local vector but optimize the inner loop allocations.
     let working_a: Vec<f64>;
     let a_ref = if !is_pos {
@@ -48,7 +52,7 @@ pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
     // Reuse buffers
     let mut r = vec![0.0; a_ref.len()];
     let mut dt_exc = Vec::with_capacity(a_ref.len()); // Dynamic reuse
-    
+
     let mut msdti1 = vec![0.0; n_thresh];
     let mut msdti3 = vec![0.0; n_thresh];
     let mut msdti4 = vec![0.0; n_thresh];
@@ -71,7 +75,7 @@ pub fn dn_outlier_include_np_001_mdrmd(a: &[f64], is_pos: bool) -> f64 {
 
         msdti1[i] = mean(&dt_exc);
         msdti3[i] = (dt_exc.len() as f64 * 100.0) / tot as f64;
-        
+
         // Optimize median calculation?
         // median() sorts the slice. buffer `r` is partially filled.
         msdti4[i] = median(&r[..high_size]) / (a_ref.len() as f64 / 2.0) - 1.0;
@@ -210,7 +214,9 @@ pub fn co_first_min_ac(a: &[f64]) -> f64 {
 ///
 /// Automutual information using histograms.
 pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f64 {
-    if a.len() <= tau { return 0.0; }
+    if a.len() <= tau {
+        return 0.0;
+    }
     let mut y1 = vec![0.0; a.len() - tau];
     let mut y2 = vec![0.0; a.len() - tau];
 
@@ -238,7 +244,11 @@ pub fn co_histogram_ami_even_tau_bins(a: &[f64], tau: usize, n_bins: usize) -> f
         bins12[i] = ((bins1[i] - 1) * (n_bins + 1) + bins2[i]) as f64;
     }
 
-    for (i, val) in bin_edges12.iter_mut().enumerate().take((n_bins + 1) * (n_bins + 1)) {
+    for (i, val) in bin_edges12
+        .iter_mut()
+        .enumerate()
+        .take((n_bins + 1) * (n_bins + 1))
+    {
         *val = (i + 1) as f64;
     }
 
@@ -394,11 +404,7 @@ pub fn sb_binary_stats_diff_longstretch0(a: &[f64]) -> f64 {
 
     for (i, val) in y_bin.iter_mut().enumerate().take(a.len() - 1) {
         let diff_temp = a[i + 1] - a[i];
-        if diff_temp < 0.0 {
-            *val = 0
-        } else {
-            *val = 1
-        }
+        if diff_temp < 0.0 { *val = 0 } else { *val = 1 }
     }
 
     let mut max_stretch = 0;
@@ -458,7 +464,9 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
     let alphabet_size = 3;
     let yt = coarsegrain(a, alphabet_size);
 
-    let mut r1: Vec<Vec<usize>> = (0..alphabet_size).map(|_| Vec::with_capacity(a.len())).collect();
+    let mut r1: Vec<Vec<usize>> = (0..alphabet_size)
+        .map(|_| Vec::with_capacity(a.len()))
+        .collect();
     for (i, vec_r1) in r1.iter_mut().enumerate().take(alphabet_size) {
         for (j, &val) in yt.iter().enumerate().take(a.len()) {
             if val == i + 1 {
@@ -518,13 +526,13 @@ pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f6
     }
 
     // Pre-calculate x_reg for max tau to avoid reallocation?
-    // Actually x_reg varies from 1 to tau[i]. 
+    // Actually x_reg varies from 1 to tau[i].
     // We can allocate one buffer of max size.
     let max_tau_val = tau[n_tau - 1] as usize;
     let x_reg_buffer: Vec<f64> = (1..=max_tau_val).map(|v| v as f64).collect();
 
     let f = fa_compute_f(&y_cs, &tau, n_tau, &x_reg_buffer, how);
-    
+
     fa_fit_log_log(&tau, &f, n_tau)
 }
 
@@ -548,26 +556,32 @@ fn fa_generate_tau(n: usize) -> (Vec<f64>, usize) {
         // Let's stick to original logic's intent: remove duplicates.
         // The original code uses a shift strategy.
         let j = i;
-        while j < n_tau - 1 && tau[j] == tau[j+1] {
-             // shift everything left
-             for k in j+1..n_tau {
-                 tau[k-1] = tau[k];
-             }
-             n_tau -= 1;
-             // Don't advance j, check again
+        while j < n_tau - 1 && tau[j] == tau[j + 1] {
+            // shift everything left
+            for k in j + 1..n_tau {
+                tau[k - 1] = tau[k];
+            }
+            n_tau -= 1;
+            // Don't advance j, check again
         }
     }
-    
+
     // Sort and dedup is easier in rust:
     // tau.sort_by(|a, b| a.partial_cmp(b).unwrap());
     // tau.dedup();
     // But we need to match original behavior potentially.
     // Original behavior preserves order (which is sorted) and removes successive duplicates.
-    
+
     (tau, n_tau)
 }
 
-fn fa_compute_f(y_cs: &[f64], tau: &[f64], n_tau: usize, x_reg_buffer: &[f64], how: &str) -> Vec<f64> {
+fn fa_compute_f(
+    y_cs: &[f64],
+    tau: &[f64],
+    n_tau: usize,
+    x_reg_buffer: &[f64],
+    how: &str,
+) -> Vec<f64> {
     let mut f = vec![0.0; n_tau];
     let mut buffer = Vec::with_capacity(x_reg_buffer.len());
 
@@ -580,12 +594,12 @@ fn fa_compute_f(y_cs: &[f64], tau: &[f64], n_tau: usize, x_reg_buffer: &[f64], h
             let start = j * t_i;
             let end = start + t_i;
             let y_slice = &y_cs[start..end];
-            
+
             let (m, b) = linreg(t_i, &x_reg_buffer[..t_i], y_slice);
 
             buffer.clear();
             for (k, &val) in y_slice.iter().enumerate().take(t_i) {
-                 buffer.push(val - (m * (k + 1) as f64 + b));
+                buffer.push(val - (m * (k + 1) as f64 + b));
             }
 
             match how {
@@ -593,11 +607,11 @@ fn fa_compute_f(y_cs: &[f64], tau: &[f64], n_tau: usize, x_reg_buffer: &[f64], h
                     let max = max_(&buffer);
                     let min = min_(&buffer);
                     f[i] += (max - min).powi(2);
-                }
+                },
                 "dfa" => {
                     // map().sum() is faster/cleaner
                     f[i] += buffer.iter().map(|x| x.powi(2)).sum::<f64>();
-                }
+                },
                 _ => {}, // Should return error or 0
             }
         }
@@ -622,11 +636,13 @@ fn fa_fit_log_log(tau: &[f64], f: &[f64], n_tau: usize) -> f64 {
 
     let min_points = 6;
     let nsserr = n_tau - 2 * min_points + 1;
-    if nsserr == 0 { return 0.0; } // Safety check
+    if nsserr == 0 {
+        return 0.0;
+    } // Safety check
 
     let mut sserr = vec![0.0; nsserr];
     // Buffer for linreg residuals
-    let mut buffer = Vec::with_capacity(n_tau); 
+    let mut buffer = Vec::with_capacity(n_tau);
 
     for i in min_points..n_tau - min_points + 1 {
         let (m1, b1) = linreg(i, &logtt, &logff);
@@ -646,7 +662,11 @@ fn fa_fit_log_log(tau: &[f64], f: &[f64], n_tau: usize) -> f64 {
     }
 
     let min_ind = (0..nsserr)
-        .min_by(|&a, &b| sserr[a].partial_cmp(&sserr[b]).unwrap_or(std::cmp::Ordering::Equal))
+        .min_by(|&a, &b| {
+            sserr[a]
+                .partial_cmp(&sserr[b])
+                .unwrap_or(std::cmp::Ordering::Equal)
+        })
         .unwrap_or(0);
 
     (min_ind + min_points) as f64 / n_tau as f64
@@ -686,7 +706,9 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
 
     match what {
         "centroid" => {
-            if s_cs.is_empty() { return 0.0; }
+            if s_cs.is_empty() {
+                return 0.0;
+            }
             let s_cs_thresh = s_cs[s.len() - 1] / 2.0;
             let mut centroid = 0.0;
             for i in 0..s.len() {
@@ -696,19 +718,19 @@ pub fn sp_summaries_welch_rect(a: &[f64], what: &str) -> f64 {
                 }
             }
             centroid
-        }
+        },
         "area_5_1" => {
             let mut area_5_1 = 0.0;
             for i in 0..s.len() {
                 // Corrected logic: area_5_1 likely refers to power in period range [1, 5] (Hz [0.2, 1.0])
                 // w is angular frequency = 2*pi*f
                 let f_val = w[i] / (2.0 * std::f64::consts::PI);
-                if (0.2..=1.0).contains(&f_val) { 
+                if (0.2..=1.0).contains(&f_val) {
                     area_5_1 += sw[i];
                 }
             }
             area_5_1 * dw
-        }
+        },
         _ => 0.0,
     }
 }
@@ -738,12 +760,12 @@ pub fn sb_transition_matrix_3ac_sumdiagcov(a: &[f64]) -> f64 {
     let mut t = vec![vec![0.0; 3]; 3];
 
     for i in 0..n_down.saturating_sub(1) {
-        if i+1 < y_cg.len() {
-             let idx1 = y_cg[i].saturating_sub(1);
-             let idx2 = y_cg[i + 1].saturating_sub(1);
-             if idx1 < 3 && idx2 < 3 {
-                 t[idx1][idx2] += 1.0;
-             }
+        if i + 1 < y_cg.len() {
+            let idx1 = y_cg[i].saturating_sub(1);
+            let idx2 = y_cg[i + 1].saturating_sub(1);
+            if idx1 < 3 && idx2 < 3 {
+                t[idx1][idx2] += 1.0;
+            }
         }
     }
 
@@ -771,13 +793,13 @@ pub fn pd_periodicity_wang_th0_01(a: &[f64]) -> f64 {
     // We need splinefit core that returns Vec<f64>
     // existing splinefit returns Series.
     // In smoothing.rs, we exposed splinefit_core
-    
+
     // Original reference calls splinefit(a).
-     let n = a.len();
-     let deg = 3;
-     let pieces = 2;
-     let breaks = [0, (n as f64 / 2.0).floor() as usize - 1, n - 1];
-     let y_spline = splinefit_core(a, &breaks, deg, pieces);
+    let n = a.len();
+    let deg = 3;
+    let pieces = 2;
+    let breaks = [0, (n as f64 / 2.0).floor() as usize - 1, n - 1];
+    let y_spline = splinefit_core(a, &breaks, deg, pieces);
 
     let mut y_sub = vec![0.0; a.len()];
     for i in 0..a.len() {

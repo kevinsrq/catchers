@@ -2,8 +2,13 @@
 use polars::prelude::*;
 use pyo3_polars::derive::polars_expr;
 use serde::Deserialize;
+
 use crate::catchers;
-use crate::feature_extraction::{statistics, energy_and_complexity, change, fourier, wavelets, entropy, distribution, basic_counts, locations, correlation, dynamics, linear_trend, counts_ranges, stats_tests};
+use crate::feature_extraction::{
+    basic_counts, change, correlation, counts_ranges, distribution, dynamics,
+    energy_and_complexity, entropy, fourier, linear_trend, locations, statistics, stats_tests,
+    wavelets,
+};
 
 // --------------------------------------------------------------------------------
 // Helper to extract data
@@ -148,21 +153,19 @@ struct ValueKwargs {
     value: f64,
 }
 
-
 #[derive(Deserialize)]
 struct QuantileKwargs {
     q: f64,
 }
-
 
 // --------------------------------------------------------------------------------
 // Expressions
 // --------------------------------------------------------------------------------
 
 /// Distribution of Outliers (DN_OutlierInclude_n_001_mdrmd)
-/// 
+///
 /// measures the spread of the data including outliers.
-/// 
+///
 /// # Arguments
 /// * `is_pos` - Whether to consider positive (true) or negative (false) deviations.
 #[polars_expr(output_type=Float64)]
@@ -173,9 +176,9 @@ fn dn_outlier_include_np_001_mdrmd(inputs: &[Series], kwargs: IsPosKwargs) -> Po
 }
 
 /// Histogram Mode (DN_HistogramMode_5 / 10)
-/// 
+///
 /// Measures the mode of the data using a histogram with `n_bins`.
-/// 
+///
 /// # Arguments
 /// * `n_bins` - Number of bins for the histogram.
 #[polars_expr(output_type=Float64)]
@@ -186,7 +189,7 @@ fn dn_histogram_mode(inputs: &[Series], kwargs: NBinsKwargs) -> PolarsResult<Ser
 }
 
 /// Correlation - Embedding Distance (CO_Embed2_Dist_tau_d_expfit_meandiff)
-/// 
+///
 /// Measures the exponential fit to the mean distance in the embedding space.
 #[polars_expr(output_type=Float64)]
 fn co_embed2_dist_tau_d_expfit_meandiff(inputs: &[Series]) -> PolarsResult<Series> {
@@ -212,14 +215,17 @@ fn co_first_min_ac(inputs: &[Series]) -> PolarsResult<Series> {
 }
 
 /// Correlation - Histogram AMI Even (CO_HistogramAMI_even_2_5)
-/// 
+///
 /// Automutual information using histograms.
-/// 
+///
 /// # Arguments
 /// * `tau` - The time lag.
 /// * `n_bins` - Number of bins.
 #[polars_expr(output_type=Float64)]
-fn co_histogram_ami_even_tau_bins(inputs: &[Series], kwargs: TauNBinsKwargs) -> PolarsResult<Series> {
+fn co_histogram_ami_even_tau_bins(
+    inputs: &[Series],
+    kwargs: TauNBinsKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = catchers::co_histogram_ami_even_tau_bins(&data, kwargs.tau, kwargs.n_bins);
     Ok(Series::new("out".into(), [out]))
@@ -234,42 +240,51 @@ fn co_trev_1_num(inputs: &[Series]) -> PolarsResult<Series> {
 }
 
 /// Forecasting - Local Simple Mean Ratio (FC_LocalSimple_mean1_tauresrat)
-/// 
+///
 /// # Arguments
 /// * `train_length` - Length of the training period for the local mean.
 #[polars_expr(output_type=Float64)]
-fn fc_local_simple_mean_tauresrat(inputs: &[Series], kwargs: TrainLengthKwargs) -> PolarsResult<Series> {
+fn fc_local_simple_mean_tauresrat(
+    inputs: &[Series],
+    kwargs: TrainLengthKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = catchers::fc_local_simple_mean_tauresrat(&data, kwargs.train_length);
     Ok(Series::new("out".into(), [out]))
 }
 
 /// Forecasting - Local Simple Mean Std Err (FC_LocalSimple_mean3_stderr)
-/// 
+///
 /// # Arguments
 /// * `train_length` - Length of the training period.
 #[polars_expr(output_type=Float64)]
-fn fc_local_simple_mean_stderr(inputs: &[Series], kwargs: TrainLengthKwargs) -> PolarsResult<Series> {
+fn fc_local_simple_mean_stderr(
+    inputs: &[Series],
+    kwargs: TrainLengthKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = catchers::fc_local_simple_mean_stderr(&data, kwargs.train_length);
     Ok(Series::new("out".into(), [out]))
 }
 
 /// Information - Auto Mutual Information (IN_AutoMutualInfoStats_40_gaussian_fmmi)
-/// 
+///
 /// # Arguments
 /// * `tau` - The time lag (as float/time unit, but used as value here).
 #[polars_expr(output_type=Float64)]
-fn in_auto_mutual_info_stats_tau_gaussian_fmmi(inputs: &[Series], kwargs: TauF64Kwargs) -> PolarsResult<Series> {
+fn in_auto_mutual_info_stats_tau_gaussian_fmmi(
+    inputs: &[Series],
+    kwargs: TauF64Kwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = catchers::in_auto_mutual_info_stats_tau_gaussian_fmmi(&data, kwargs.tau);
     Ok(Series::new("out".into(), [out]))
 }
 
 /// Medical - HRV Classic pNN (MD_hrv_classic_pnn40)
-/// 
+///
 /// Percentage of successive RR intervals that differ by more than `pnn` ms.
-/// 
+///
 /// # Arguments
 /// * `pnn` - The threshold (e.g. 40 in pnn40).
 #[polars_expr(output_type=Float64)]
@@ -304,19 +319,22 @@ fn sb_motif_three_quantile_hh(inputs: &[Series]) -> PolarsResult<Series> {
 }
 
 /// Scaling - Fluctuation Analysis (SC_FluctAnal_2_50_1_logi_prop_r1_dfa / rsrangefit)
-/// 
+///
 /// # Arguments
 /// * `lag` - The lag parameter.
 /// * `how` - The method ("dfa" or "rsrangefit").
 #[polars_expr(output_type=Float64)]
-fn sc_fluct_anal_2_50_1_logi_prop_r1(inputs: &[Series], kwargs: FluctAnalKwargs) -> PolarsResult<Series> {
+fn sc_fluct_anal_2_50_1_logi_prop_r1(
+    inputs: &[Series],
+    kwargs: FluctAnalKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = catchers::sc_fluct_anal_2_50_1_logi_prop_r1(&data, kwargs.lag, &kwargs.how);
     Ok(Series::new("out".into(), [out]))
 }
 
 /// Spectral - Welch Summary (SP_Summaries_welch_rect_centroid / area_5_1)
-/// 
+///
 /// # Arguments
 /// * `what` - The summary statistic to calculate ("centroid" or "area_5_1").
 #[polars_expr(output_type=Float64)]
@@ -422,7 +440,6 @@ fn fresh_variation_coefficient(inputs: &[Series]) -> PolarsResult<Series> {
     let out = statistics::variation_coefficient(&data);
     Ok(Series::new("out".into(), [out]))
 }
-
 
 #[polars_expr(output_type=Float64)]
 fn fresh_abs_energy(inputs: &[Series]) -> PolarsResult<Series> {
@@ -564,7 +581,9 @@ fn fresh_percentage_of_reoccurring_values_to_all_values(inputs: &[Series]) -> Po
 }
 
 #[polars_expr(output_type=Float64)]
-fn fresh_percentage_of_reoccurring_datapoints_to_all_datapoints(inputs: &[Series]) -> PolarsResult<Series> {
+fn fresh_percentage_of_reoccurring_datapoints_to_all_datapoints(
+    inputs: &[Series],
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = basic_counts::percentage_of_reoccurring_datapoints_to_all_datapoints(&data);
     Ok(Series::new("out".into(), [out]))
@@ -631,7 +650,10 @@ fn fresh_number_peaks(inputs: &[Series], kwargs: NumberPeaksKwargs) -> PolarsRes
 }
 
 #[polars_expr(output_type=Float64)]
-fn fresh_index_mass_quantile(inputs: &[Series], kwargs: MassQuantileKwargs) -> PolarsResult<Series> {
+fn fresh_index_mass_quantile(
+    inputs: &[Series],
+    kwargs: MassQuantileKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = locations::index_mass_quantile(&data, kwargs.q);
     Ok(Series::new("out".into(), [out]))
@@ -649,7 +671,10 @@ fn fresh_agg_autocorrelation(inputs: &[Series], kwargs: AggAutocorrKwargs) -> Po
 }
 
 #[polars_expr(output_type=Float64)]
-fn fresh_partial_autocorrelation(inputs: &[Series], kwargs: PartialAutocorrKwargs) -> PolarsResult<Series> {
+fn fresh_partial_autocorrelation(
+    inputs: &[Series],
+    kwargs: PartialAutocorrKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = correlation::partial_autocorrelation(&data, kwargs.lag);
     Ok(Series::new("out".into(), [out]))
@@ -660,7 +685,10 @@ fn fresh_partial_autocorrelation(inputs: &[Series], kwargs: PartialAutocorrKwarg
 // --------------------------------------------------------------------------------
 
 #[polars_expr(output_type=Float64)]
-fn fresh_time_reversal_asymmetry_statistic(inputs: &[Series], kwargs: LagKwargs) -> PolarsResult<Series> {
+fn fresh_time_reversal_asymmetry_statistic(
+    inputs: &[Series],
+    kwargs: LagKwargs,
+) -> PolarsResult<Series> {
     let data = series_to_f64_vec(&inputs[0])?;
     let out = dynamics::time_reversal_asymmetry_statistic(&data, kwargs.lag);
     Ok(Series::new("out".into(), [out]))
@@ -719,12 +747,3 @@ fn fresh_quantile(inputs: &[Series], kwargs: QuantileKwargs) -> PolarsResult<Ser
     let out = stats_tests::quantile(&data, kwargs.q);
     Ok(Series::new("out".into(), [out]))
 }
-
-
-
-
-
-
-
-
-

@@ -1,5 +1,3 @@
-
-
 /// Returns the time reversal asymmetry statistic.
 ///
 /// This function calculates the value of:
@@ -16,16 +14,16 @@ pub fn time_reversal_asymmetry_statistic(x: &[f64], lag: usize) -> f64 {
     // We iterate from 0 to n - 2*lag
     let limit = n - 2 * lag;
     let mut sum = 0.0;
-    
+
     for i in 0..limit {
         let x_i = x[i];
         let x_lag = x[i + lag];
         let x_2lag = x[i + 2 * lag];
-        
+
         // (x_{i+2lag}^2 * x_{i+lag}) - (x_{i+lag} * x_{i}^2)
         sum += (x_2lag * x_2lag * x_lag) - (x_lag * x_i * x_i);
     }
-    
+
     sum / limit as f64
 }
 
@@ -41,13 +39,13 @@ pub fn c3(x: &[f64], lag: usize) -> f64 {
     if 2 * lag >= n {
         return 0.0;
     }
-    
+
     let limit = n - 2 * lag;
     let mut sum = 0.0;
-    
+
     for i in 0..limit {
         sum += x[i + 2 * lag] * x[i + lag] * x[i];
     }
-    
+
     sum / limit as f64
 }

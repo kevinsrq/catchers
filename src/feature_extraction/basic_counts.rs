@@ -17,7 +17,7 @@ pub fn longest_strike_above_mean(x: &[f64]) -> f64 {
     let m = mean(x);
     let mut max_strike = 0;
     let mut current_strike = 0;
-    
+
     for &v in x {
         if v > m {
             current_strike += 1;
@@ -34,7 +34,7 @@ pub fn longest_strike_below_mean(x: &[f64]) -> f64 {
     let m = mean(x);
     let mut max_strike = 0;
     let mut current_strike = 0;
-    
+
     for &v in x {
         if v < m {
             current_strike += 1;
@@ -54,15 +54,18 @@ fn get_unique_counts(x: &[f64]) -> Vec<(f64, usize)> {
     // tsfresh usually ignores NaNs or handles them. Here we'll handle standard floats.
     // We treat NaNs as equal to each other for grouping if present, or push to end.
     sorted.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    
+
     let mut counts = Vec::new();
-    if sorted.is_empty() { return counts; }
-    
+    if sorted.is_empty() {
+        return counts;
+    }
+
     let mut current_val = sorted[0];
     let mut current_count = 1;
-    
+
     for &v in sorted.iter().skip(1) {
-        if (v - current_val).abs() < f64::EPSILON { // float equality
+        if (v - current_val).abs() < f64::EPSILON {
+            // float equality
             current_count += 1;
         } else {
             counts.push((current_val, current_count));
@@ -78,11 +81,13 @@ fn get_unique_counts(x: &[f64]) -> Vec<(f64, usize)> {
 /// len(different values occurring more than once) / len(different values)
 pub fn percentage_of_reoccurring_values_to_all_values(x: &[f64]) -> f64 {
     let counts = get_unique_counts(x);
-    if counts.is_empty() { return 0.0; }
-    
+    if counts.is_empty() {
+        return 0.0;
+    }
+
     let num_unique = counts.len() as f64;
     let num_reoccurring = counts.iter().filter(|&&(_, c)| c > 1).count() as f64;
-    
+
     num_reoccurring / num_unique
 }
 
@@ -90,20 +95,24 @@ pub fn percentage_of_reoccurring_values_to_all_values(x: &[f64]) -> f64 {
 /// # of data points occurring more than once / # of all data points
 pub fn percentage_of_reoccurring_datapoints_to_all_datapoints(x: &[f64]) -> f64 {
     let counts = get_unique_counts(x);
-    if x.is_empty() { return 0.0; }
-    
-    let sum_reoccurring: usize = counts.iter()
+    if x.is_empty() {
+        return 0.0;
+    }
+
+    let sum_reoccurring: usize = counts
+        .iter()
         .filter(|&&(_, c)| c > 1)
         .map(|&(_, c)| c)
         .sum();
-    
+
     sum_reoccurring as f64 / x.len() as f64
 }
 
 /// Returns the sum of all values, that are present in the time series more than once.
 pub fn sum_of_reoccurring_values(x: &[f64]) -> f64 {
     let counts = get_unique_counts(x);
-    counts.iter()
+    counts
+        .iter()
         .filter(|&&(_, c)| c > 1)
         .map(|&(v, _)| v)
         .sum()
@@ -112,7 +121,8 @@ pub fn sum_of_reoccurring_values(x: &[f64]) -> f64 {
 /// Returns the sum of all data points, that are present in the time series more than once.
 pub fn sum_of_reoccurring_data_points(x: &[f64]) -> f64 {
     let counts = get_unique_counts(x);
-    counts.iter()
+    counts
+        .iter()
         .filter(|&&(_, c)| c > 1)
         .map(|&(v, c)| v * c as f64)
         .sum()
@@ -121,7 +131,9 @@ pub fn sum_of_reoccurring_data_points(x: &[f64]) -> f64 {
 /// Returns a factor which is 1 if all values in the time series occur only once,
 /// and below one if this is not the case. len(unique) / len(x)
 pub fn ratio_value_number_to_time_series_length(x: &[f64]) -> f64 {
-    if x.is_empty() { return 0.0; }
+    if x.is_empty() {
+        return 0.0;
+    }
     let counts = get_unique_counts(x);
     counts.len() as f64 / x.len() as f64
 }
