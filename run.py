@@ -1,11 +1,12 @@
+import math
+import random
+from datetime import datetime, timedelta
+
 import polars as pl
 
 import catchers
 
 assert catchers.__name__ == "catchers"
-import math
-import random
-from datetime import datetime, timedelta
 
 # Set seed for reproducibility
 random.seed(42)
