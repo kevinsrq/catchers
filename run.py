@@ -1,8 +1,11 @@
 import polars as pl
+
 import catchers
-from datetime import datetime, timedelta
+
+assert catchers.__name__ == "catchers"
 import math
 import random
+from datetime import datetime, timedelta
 
 # Set seed for reproducibility
 random.seed(42)
@@ -29,12 +32,14 @@ for i, uid in enumerate(ids):
         else:
             # Constant with noise
             target = 10.0 + random.gauss(0, 0.5)
-            
-        data.append({
-            "id": uid,
-            "datetime": start_date + timedelta(hours=j),
-            "target": float(target)
-        })
+
+        data.append(
+            {
+                "id": uid,
+                "datetime": start_date + timedelta(hours=j),
+                "target": float(target),
+            }
+        )
 
 df = pl.DataFrame(data)
 
@@ -49,9 +54,7 @@ try:
     catchers_df = (
         df.sort("datetime")
         .group_by("id")
-        .agg(
-            pl.col("target").catchers.catch_all().alias("features")
-        )
+        .agg(pl.col("target").catchers.catch_all().alias("features"))
         .unnest("features")
     ).sort("id")
     print(catchers_df)
@@ -61,9 +64,7 @@ try:
     fresh_df = (
         df.sort("datetime")
         .group_by("id")
-        .agg(
-            pl.col("target").fresh.catch_all().alias("features")
-        )
+        .agg(pl.col("target").fresh.catch_all().alias("features"))
         .unnest("features")
     ).sort("id")
     print(fresh_df)
@@ -75,15 +76,13 @@ try:
 
     # 4. Validating Rolling Windows
     print("\n--- Rolling Window Validation (Fresh) ---")
-    # Using 10-point rolling window instead of time if datetime is not evenly spaced, 
+    # Using 10-point rolling window instead of time if datetime is not evenly spaced,
     # but here we have hourly data so "10h" is fine or index based.
     # Let's use index-based rolling for simplicity or known window size.
     rolling_df = (
         df.sort("datetime")
         .rolling(index_column="datetime", period="10h")
-        .agg(
-            pl.col("target").fresh.catch_all().alias("rolling_features")
-        )
+        .agg(pl.col("target").fresh.catch_all().alias("rolling_features"))
         .unnest("rolling_features")
     )
     print(rolling_df.tail())
@@ -92,6 +91,7 @@ try:
 except Exception as e:
     print(f"ERROR: {e}")
     import traceback
+
     traceback.print_exc()
 
 print("--- Script Finished Successfully ---")
