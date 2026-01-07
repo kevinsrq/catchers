@@ -126,7 +126,7 @@ class CatchersNamespace:
     def catch_all(self, include_mean_std: bool = False) -> pl.Expr:
         """
         Calculates all 22 (or 24) features in a single call.
-        
+
         Returns a Struct containing all features.
         """
         feats = {
@@ -156,8 +156,8 @@ class CatchersNamespace:
         if include_mean_std:
             feats["mean"] = self._expr.mean()
             feats["std"] = self._expr.std()
-            
-        return pl.struct(**feats)
+
+        return pl.struct([v.alias(k) for k, v in feats.items()])
 
     # --- Generic Names (Mapping to Rust Expressions) ---
 
@@ -177,19 +177,27 @@ class CatchersNamespace:
         return self._register("co_first_min_ac")
 
     def co_histogram_ami_even_tau_bins(self, tau: int = 1, n_bins: int = 5) -> pl.Expr:
-        return self._register("co_histogram_ami_even_tau_bins", {"tau": tau, "n_bins": n_bins})
+        return self._register(
+            "co_histogram_ami_even_tau_bins", {"tau": tau, "n_bins": n_bins}
+        )
 
     def co_trev_1_num(self) -> pl.Expr:
         return self._register("co_trev_1_num")
 
     def fc_local_simple_mean_tauresrat(self, train_length: int = 10) -> pl.Expr:
-        return self._register("fc_local_simple_mean_tauresrat", {"train_length": train_length})
+        return self._register(
+            "fc_local_simple_mean_tauresrat", {"train_length": train_length}
+        )
 
     def fc_local_simple_mean_stderr(self, train_length: int = 10) -> pl.Expr:
-        return self._register("fc_local_simple_mean_stderr", {"train_length": train_length})
+        return self._register(
+            "fc_local_simple_mean_stderr", {"train_length": train_length}
+        )
 
     def in_auto_mutual_info_stats_tau_gaussian_fmmi(self, tau: float = 1.0) -> pl.Expr:
-        return self._register("in_auto_mutual_info_stats_tau_gaussian_fmmi", {"tau": tau})
+        return self._register(
+            "in_auto_mutual_info_stats_tau_gaussian_fmmi", {"tau": tau}
+        )
 
     def md_hrv_classic_pnn(self, pnn: int = 40) -> pl.Expr:
         return self._register("md_hrv_classic_pnn", {"pnn": pnn})
@@ -203,8 +211,12 @@ class CatchersNamespace:
     def sb_motif_three_quantile_hh(self) -> pl.Expr:
         return self._register("sb_motif_three_quantile_hh")
 
-    def sc_fluct_anal_2_50_1_logi_prop_r1(self, lag: int = 1, how: str = "dfa") -> pl.Expr:
-        return self._register("sc_fluct_anal_2_50_1_logi_prop_r1", {"lag": lag, "how": how})
+    def sc_fluct_anal_2_50_1_logi_prop_r1(
+        self, lag: int = 1, how: str = "dfa"
+    ) -> pl.Expr:
+        return self._register(
+            "sc_fluct_anal_2_50_1_logi_prop_r1", {"lag": lag, "how": how}
+        )
 
     def sp_summaries_welch_rect(self, what: str = "centroid") -> pl.Expr:
         return self._register("sp_summaries_welch_rect", {"what": what})
@@ -301,8 +313,12 @@ class FreshNamespace:
     def binned_entropy(self, max_bins: int = 10) -> pl.Expr:
         return self._register("fresh_binned_entropy", {"max_bins": max_bins})
 
-    def friedrich_coefficient(self, m: int = 1, r: int = 30, coeff_index: int = 0) -> pl.Expr:
-        return self._register("fresh_friedrich_coefficient", {"m": m, "r": r, "coeff_index": coeff_index})
+    def friedrich_coefficient(
+        self, m: int = 1, r: int = 30, coeff_index: int = 0
+    ) -> pl.Expr:
+        return self._register(
+            "fresh_friedrich_coefficient", {"m": m, "r": r, "coeff_index": coeff_index}
+        )
 
     # --- Batch 1: Basic Counts & Streaks ---
 
@@ -322,7 +338,9 @@ class FreshNamespace:
         return self._register("fresh_percentage_of_reoccurring_values_to_all_values")
 
     def percentage_of_reoccurring_datapoints_to_all_datapoints(self) -> pl.Expr:
-        return self._register("fresh_percentage_of_reoccurring_datapoints_to_all_datapoints")
+        return self._register(
+            "fresh_percentage_of_reoccurring_datapoints_to_all_datapoints"
+        )
 
     def sum_of_reoccurring_values(self) -> pl.Expr:
         return self._register("fresh_sum_of_reoccurring_values")
@@ -350,7 +368,6 @@ class FreshNamespace:
     def number_peaks(self, n: int = 1) -> pl.Expr:
         return self._register("fresh_number_peaks", {"n": n})
 
-    
     def index_mass_quantile(self, q: float = 0.5) -> pl.Expr:
         return self._register("fresh_index_mass_quantile", {"q": q})
 
@@ -358,7 +375,9 @@ class FreshNamespace:
 
     def agg_autocorrelation(self, f_agg: str = "mean", maxlag: int = 10) -> pl.Expr:
         # Map f_agg to match_agg due to param names? No, kwargs uses struct field name.
-        return self._register("fresh_agg_autocorrelation", {"match_agg": f_agg, "maxlag": maxlag})
+        return self._register(
+            "fresh_agg_autocorrelation", {"match_agg": f_agg, "maxlag": maxlag}
+        )
 
     def partial_autocorrelation(self, lag: int = 1) -> pl.Expr:
         return self._register("fresh_partial_autocorrelation", {"lag": lag})
@@ -388,13 +407,11 @@ class FreshNamespace:
     def value_count(self, value: float = 0.0) -> pl.Expr:
         return self._register("fresh_value_count", {"value": value})
 
-
     def quantile(self, q: float = 0.5) -> pl.Expr:
         return self._register("fresh_quantile", {"q": q})
 
-
     def catch_all(self) -> pl.Expr:
-        """Calculates a set of essential tsfresh features. 
+        """Calculates a set of essential tsfresh features.
         Compatible with df.rolling(w).agg(pl.col("x").fresh.catch_all()) if unnested."""
         feats = {
             "abs_energy": self.abs_energy(),
@@ -438,4 +455,4 @@ class FreshNamespace:
             "check_large_std": self.large_standard_deviation(r=0.25).cast(pl.Float64),
             "check_symmetry": self.symmetry_looking(r=0.05).cast(pl.Float64),
         }
-        return pl.struct(**feats)
+        return pl.struct([v.alias(k) for k, v in feats.items()])
