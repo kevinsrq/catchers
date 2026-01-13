@@ -1,6 +1,6 @@
-# catchers
+# polars-catchers
 
-`catchers` is a high-performance **Polars extension** that implements:
+`polars-catchers` is a high-performance **Polars extension** that implements:
 1.  The **catch22** (CAnonical Time-series CHaracteristics) feature set.
 2.  A comprehensive subset of **tsfresh** (Time Series FeatuRe Extraction on Basis of Scalable Hypothesis tests) features.
 
@@ -24,7 +24,7 @@ Access the features through the `.catchers` or `.fresh` namespaces on any Polars
 
 ```python
 import polars as pl
-import catchers
+import polars_catchers
 
 df = pl.DataFrame({
     "id": ["A", "A", "B", "B"],
@@ -47,7 +47,7 @@ df.group_by("id").agg(
 
 ```python
 import polars as pl
-import catchers
+import polars_catchers
 
 df = pl.DataFrame({
     "x": [10.0, 12.0, 15.0, 14.0, 10.0, 12.0]

@@ -1,7 +1,7 @@
 def test_import():
     try:
-        import catchers
+        import polars_catchers
 
-        assert catchers.__name__ == "catchers"
+        assert polars_catchers.__name__ == "polars_catchers"
     except ImportError:
-        assert False, "Failed to import catchers"
+        assert False, "Failed to import polars_catchers"

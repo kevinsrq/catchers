@@ -6,10 +6,10 @@ from typing import TYPE_CHECKING
 import polars as pl
 from polars.plugins import register_plugin_function
 
-from catchers._internal import __version__ as __version__
+from polars_catchers._internal import __version__ as __version__
 
 if TYPE_CHECKING:
-    from catchers.typing import IntoExprColumn as IntoExprColumn
+    from polars_catchers.typing import IntoExprColumn as IntoExprColumn
 
 LIB = Path(__file__).parent
 

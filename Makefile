@@ -15,8 +15,8 @@ install-release:
 pre-commit:
 	cargo fmt --all && cargo clippy --all-features
 	.venv/bin/python -m ruff check . --fix --exit-non-zero-on-fix
-	.venv/bin/python -m ruff format catchers tests
-	.venv/bin/mypy catchers tests
+	.venv/bin/python -m ruff format polars_catchers tests
+	.venv/bin/python -m mypy polars_catchers tests
 
 test:
 	.venv/bin/python -m pytest tests

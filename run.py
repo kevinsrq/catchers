@@ -4,9 +4,9 @@ from datetime import datetime, timedelta
 
 import polars as pl
 
-import catchers
+import polars_catchers
 
-assert catchers.__name__ == "catchers"
+assert polars_catchers.__name__ == "polars_catchers"
 
 # Set seed for reproducibility
 random.seed(42)
