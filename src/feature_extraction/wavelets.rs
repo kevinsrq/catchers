@@ -24,7 +24,11 @@ pub fn cwt_coefficient(x: &[f64], width: f64, index: usize) -> f64 {
     let mut sum = 0.0;
 
     for offset in -window_half..=window_half {
-        let x_idx = (index as isize + offset) as usize;
+        let idx = index as isize + offset;
+        if idx < 0 {
+            continue;
+        }
+        let x_idx = idx as usize;
         if x_idx < x.len() {
             // center the wavelet at 'index'
             // s = offset/width
