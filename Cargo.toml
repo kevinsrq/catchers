@@ -1,14 +1,14 @@
 [package]
-name = "catchers"
+name = "polars-catchers"
 version = "0.1.0"
 edition = "2024"
 description = "High-performance Polars extension for Catch22 time-series features"
 license = "MIT"
-repository = "https://github.com/kevin/catchers"
+repository = "https://github.com/kevin/polars-catchers"
 readme = "README.md"
 
 [lib]
-name = "catchers"
+name = "polars-catchers"
 crate-type = ["cdylib"]
 
 [dependencies]
