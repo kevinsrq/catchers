@@ -507,9 +507,6 @@ pub fn sb_motif_three_quantile_hh(a: &[f64]) -> f64 {
 /// Scaling - Fluctuation Analysis (SC_FluctAnal_2_50_1_logi_prop_r1_dfa / rsrangefit).
 ///
 /// Performs fluctuation analysis (DFA or RS range fit).
-/// Scaling - Fluctuation Analysis (SC_FluctAnal_2_50_1_logi_prop_r1_dfa / rsrangefit).
-///
-/// Performs fluctuation analysis (DFA or RS range fit).
 pub fn sc_fluct_anal_2_50_1_logi_prop_r1(a: &[f64], lag: usize, how: &str) -> f64 {
     let (tau, n_tau) = fa_generate_tau(a.len());
 
