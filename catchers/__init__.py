@@ -248,7 +248,7 @@ class FreshNamespace:
     def variance_larger_than_standard_deviation(self) -> pl.Expr:
         return self._register("fresh_variance_larger_than_standard_deviation")
 
-    def ratio_beyond_r_sigma(self, r: float = 1.0) -> pl.Expr:
+    def ratio_beyond_r_sigma(self, r: float = 2.0) -> pl.Expr:
         return self._register("fresh_ratio_beyond_r_sigma", {"r": r})
 
     def large_standard_deviation(self, r: float = 0.25) -> pl.Expr:
