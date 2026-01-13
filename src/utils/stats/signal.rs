@@ -1,34 +1,31 @@
-use std::sync::Arc;
+use num_traits::Zero;
 use polars::prelude::*;
+use rustfft::FftPlanner;
+use rustfft::num_complex::Complex;
 
-use rustfft::{num_complex::Complex, FftPlanner};
-use num_traits::{ToPrimitive, Zero};
 use crate::utils::stats::basic::mean;
 
 // ==============================================================================
-// 1. Processamento de Sinais (Signal Processing)
+// 1. Signal Processing
 // ==============================================================================
 
-/// Calcula o primeiro índice onde a autocorrelação cruza zero.
-/// Útil para determinar a "lag" natural de uma série temporal.
+/// Calculates the first index where the autocorrelation crosses zero.
+/// Useful for determining the natural "lag" of a time series.
+/// Optimized to reuse the core autocorrelation logic.
+#[allow(dead_code)]
 pub fn first_zero<T>(ca: &ChunkedArray<T>, max_tau: usize) -> PolarsResult<usize>
 where
     T: PolarsNumericType,
 {
-    // Reutiliza a lógica de autocorrelação (assumindo que já temos a função autocorr disponível ou implementada aqui)
-    // Para ser self-contained, implementarei uma versão simplificada ou chamaria a autocorr definida anteriormente.
-    // Aqui, faremos o cálculo direto para performance se não precisarmos da série inteira,
-    // mas o padrão catch22 usa a autocorrelação completa.
-    
-    let s = autocorr_polars(ca)?; // Chama a função autocorr definida no seu arquivo original (ou importada)
+    let s = autocorr_polars(ca)?;
     let ca_ac = s.f64()?;
-    
-    // To use core logic if needed, but here simple enough.
-    let mut zero_cross_ind = 0;
+
     let limit = std::cmp::min(max_tau, ca_ac.len());
+    let mut zero_cross_ind = 0;
 
     for i in 0..limit {
-        let val = ca_ac.get(i).unwrap_or(0.0);
+        // Safe because we know the length
+        let val = unsafe { ca_ac.get_unchecked(i) }.unwrap_or(0.0);
         if val <= 0.0 {
             break;
         }
@@ -38,51 +35,49 @@ where
     Ok(zero_cross_ind)
 }
 
+/// Core implementation of first_zero for slices.
+/// Uses the unified autocorr function to avoid code duplication.
 pub fn first_zero_core(a: &[f64], max_tau: usize) -> usize {
-    // Requires autocorr of 'a'
-    // This is circular if first_zero requires autocorr which returns signal.
-    // reference.rs implementation:
-    // let mut tau = first_zero(a, a.len()); ...
-    // -> it assumes first_zero computes autocorrelation internally or is passed it.
-    // In reference code, first_zero(a, ...) seems to do autocorr inside.
-    
-    // Simple logic implementation for reference usage:
-    // We can interpret `first_zero` in reference logic as: compute autocorr, find first zero crossing.
-    // use crate::utils::stats::basic::autocorr; // Removed
-    // let ac = autocorr(a);
-    let ac = autocorr(a);
+    let ac = autocorr(a); // Uses FFT-based autocorr
     let limit = std::cmp::min(max_tau, ac.len());
     let mut zero_cross_ind = 0;
-    for i in 0..limit {
-        if ac[i] <= 0.0 { break; }
+    for &val in ac.iter().take(limit) {
+        if val <= 0.0 {
+            break;
+        }
         zero_cross_ind += 1;
     }
     zero_cross_ind
 }
 
-/// Estimativa de Densidade Espectral de Potência (Welch's Method).
-/// Retorna um DataFrame com colunas "frequency" e "power".
-/// O padrão Catch22 usa janela retangular, mas deixei a estrutura pronta para janelas.
+/// Power Spectral Density Estimation (Welch's Method).
+/// Returns a DataFrame with "frequency" and "power" columns.
+#[allow(dead_code)]
 pub fn welch_psd<T>(ca: &ChunkedArray<T>, fs: f64) -> PolarsResult<DataFrame>
 where
     T: PolarsNumericType,
 {
     if ca.is_empty() {
-        return Err(PolarsError::ComputeError("Empty array for Welch Method".into()));
+        return Err(PolarsError::ComputeError(
+            "Empty array for Welch Method".into(),
+        ));
     }
 
-    // ... logic inside welch_psd using chunked array
-    // Simplify: Call core welch function
-    let fs = fs;
     let s_f64: Series = ca.cast(&DataType::Float64)?;
-    let mean_val = s_f64.mean().unwrap_or(0.0);
+    let ca_f64 = s_f64.f64()?;
 
-    // Prepara dados de entrada (fill nulls com média)
-    let data: Vec<f64> = ca.into_iter()
-        .map(|opt_v| opt_v.map(|v| v.to_f64().unwrap_or(mean_val)).unwrap_or(mean_val))
+    // Efficiently collect data, filling nulls with mean
+    let mean_val = ca_f64.mean().unwrap_or(0.0);
+    let data: Vec<f64> = ca_f64
+        .into_iter()
+        .map(|opt_v| opt_v.unwrap_or(mean_val))
         .collect();
-    
-    let window = vec![1.0; data.len()]; 
+
+    // Rectangular window (default catch22 behavior)
+    // Avoid allocating a full vector of 1.0s if we can just pass a slice or handle it inside welch
+    // For API compatibility with existing `welch`, we create it here.
+    let window = vec![1.0; data.len()];
+
     let (pxx, freqs) = welch(&data, fs, &window);
 
     let s_freq = Series::new("frequency".into(), freqs);
@@ -92,134 +87,180 @@ where
 }
 
 /// Computes the power spectral density using Welch's method.
-///
-/// * `signal` - Input signal array.
-/// * `fs` - Sampling frequency.
-/// * `window` - Window function to apply.
-///
-/// Returns a tuple `(S, f)` where `S` is the power spectrum and `f` are frequencies.
 pub fn welch(signal: &[f64], fs: f64, window: &[f64]) -> (Vec<f64>, Vec<f64>) {
     let n = signal.len();
     let nperseg = window.len();
     let noverlap = nperseg / 2;
     let step = nperseg - noverlap;
-    
-    // Number of segments
+
+    if step == 0 {
+        // avoid division by zero if nperseg is huge or something wrong
+        return (vec![], vec![]);
+    }
+
     let n_segments = (n - noverlap) / step;
-    
+
     let mut planner = FftPlanner::new();
     let fft = planner.plan_fft_forward(nperseg);
-    
+
+    // Reusing the buffer for FFT to avoid allocations per segment
+    // However, rustfft requires a specific buffer size.
+    let mut buffer: Vec<Complex<f64>> = vec![Complex::zero(); nperseg];
     let mut psd_acc = vec![0.0; nperseg / 2 + 1];
-    
-    // Window energy normalization
+
     let window_energy: f64 = window.iter().map(|w| w.powi(2)).sum();
+    let scale_factor = if window_energy > 0.0 {
+        2.0 / (fs * window_energy)
+    } else {
+        0.0
+    };
 
     for i in 0..n_segments {
         let start = i * step;
         let end = start + nperseg;
-        if end > n { break; }
-        
-        let segment = &signal[start..end];
-        let mut buffer: Vec<Complex<f64>> = segment.iter().zip(window.iter()).map(|(&s, &w)| Complex { re: s * w, im: 0.0 }).collect();
-        
+        if end > n {
+            break;
+        }
+
+        // Fill buffer
+        for (j, (&s, &w)) in signal[start..end].iter().zip(window.iter()).enumerate() {
+            buffer[j] = Complex { re: s * w, im: 0.0 };
+        }
+
         fft.process(&mut buffer);
-        
-        // Compute periodogram for this segment
+
+        // Accumulate PSD
         for j in 0..=nperseg / 2 {
-             let amp = buffer[j].norm_sqr(); // |X[k]|^2
-             // Scale: 2 for one-sided (except DC and Nyquist), / (fs * window_energy)
-             let mut scale = 2.0 / (fs * window_energy);
-             if j == 0 || (nperseg % 2 == 0 && j == nperseg / 2) {
-                 scale /= 2.0;
-             }
-             psd_acc[j] += amp * scale;
+            let amp = buffer[j].norm_sqr();
+            let mut scale = scale_factor;
+            if j == 0 || (nperseg.is_multiple_of(2) && j == nperseg / 2) {
+                scale /= 2.0;
+            }
+            psd_acc[j] += amp * scale;
         }
     }
-    
-    // Average
-    for v in psd_acc.iter_mut() {
-        *v /= n_segments as f64;
+
+    if n_segments > 0 {
+        for v in psd_acc.iter_mut() {
+            *v /= n_segments as f64;
+        }
     }
-    
-    // Frequencies
+
     let mut freqs = vec![0.0; nperseg / 2 + 1];
-    for i in 0..=nperseg / 2 {
-        freqs[i] = i as f64 * fs / nperseg as f64;
+    let df = fs / nperseg as f64;
+    for (i, val) in freqs.iter_mut().enumerate().take(nperseg / 2 + 1) {
+        *val = i as f64 * df;
     }
-    
+
     (psd_acc, freqs)
 }
 
-/// Computes autocorrelation for a specific lag using FFT.
+/// Computes autocorrelation using FFT.
+/// Optimized to perform calculation once.
 pub fn autocorr(a: &[f64]) -> Vec<f64> {
     let n = a.len();
-    let mean_val = mean(a);
-    let mut normalized = vec![0.0; n];
-    for i in 0..n {
-        normalized[i] = a[i] - mean_val;
+    if n == 0 {
+        return vec![];
     }
 
-    let mut planner = FftPlanner::new();
-    let fft = planner.plan_fft_forward(2 * n);
-    let ifft = planner.plan_fft_inverse(2 * n);
+    let mean_val = mean(a);
 
-    let mut buffer: Vec<Complex<f64>> = vec![Complex::zero(); 2 * n];
+    // Zero-padding is essential for linear convolution via FFT to avoid aliasing (circular convolution)
+    // Standard approach: 2*N length
+    let padded_len = n.next_power_of_two() * 2; // Optimization: Power of 2 usually faster for FFT
+
+    let mut planner = FftPlanner::new();
+    let fft = planner.plan_fft_forward(padded_len);
+    let ifft = planner.plan_fft_inverse(padded_len);
+
+    let mut buffer: Vec<Complex<f64>> = vec![Complex::zero(); padded_len];
+
+    // Centering and copying to buffer
     for i in 0..n {
-        buffer[i] = Complex { re: normalized[i], im: 0.0 };
+        buffer[i] = Complex {
+            re: a[i] - mean_val,
+            im: 0.0,
+        };
     }
 
     fft.process(&mut buffer);
 
-    for i in 0..2 * n {
-        buffer[i] = buffer[i] * buffer[i].conj();
+    // Compute PSD (Conj multiplication)
+    for c in buffer.iter_mut() {
+        *c *= c.conj();
     }
 
     ifft.process(&mut buffer);
 
-    let mut ac = vec![0.0; n];
-    let var = buffer[0].re / (2.0 * n as f64); 
+    // Normalize
+    let mut ac = Vec::with_capacity(n);
+    // The first element of IFFT result corresponds to lag 0
+    // Scale for Inverse FFT typically required if library doesn't do it?
+    // RustFFT does NOT normalize inverse FFT.
+    let scale = 1.0 / padded_len as f64;
 
-    for i in 0..n {
-        ac[i] = (buffer[i].re / (2.0 * n as f64)) / var;
+    // Variance is at index 0 (lag 0) * scale / N (biased estimator)
+    let var = (buffer[0].re * scale) / n as f64;
+
+    if var.abs() < 1e-12 {
+        return vec![0.0; n];
     }
+
+    for buffer_item in buffer.iter().take(n) {
+        let val = (buffer_item.re * scale) / n as f64; // Biased autocorrelation
+        ac.push(val / var);
+    }
+
     ac
 }
 
 /// Computes autocorrelation for a single lag `tau`.
+/// Prefer `autocorr` for multiple lags. Kept for single-lag efficiency.
 pub fn autocorr_lag(a: &[f64], tau: usize) -> f64 {
-    if tau >= a.len() { return 0.0; }
+    if tau >= a.len() {
+        return 0.0;
+    }
     let mean_val = mean(a);
     let mut num = 0.0;
     let mut den = 0.0;
-    for i in 0..a.len() {
-        den += (a[i] - mean_val).powi(2);
+
+    // Single pass for denominator could be cached if calling multiple times,
+    // but here we strictly optimize the isolated function call.
+    for x in a {
+        den += (x - mean_val).powi(2);
     }
-    for i in 0..a.len()-tau {
-        num += (a[i] - mean_val) * (a[i+tau] - mean_val);
+
+    for i in 0..a.len() - tau {
+        num += (a[i] - mean_val) * (a[i + tau] - mean_val);
     }
+
     if den == 0.0 { 0.0 } else { num / den }
 }
 
 /// Computes autocovariance for a single lag `tau`.
 pub fn autocov_lag(a: &[f64], tau: usize) -> f64 {
-    if tau >= a.len() { return 0.0; }
-    // autocov is unnormalized autocorrelation (covariance of signal with lagged self)
+    if tau >= a.len() {
+        return 0.0;
+    }
     let mean_val = mean(a);
     let mut num = 0.0;
     for i in 0..a.len() - tau {
-        num += (a[i] - mean_val) * (a[i+tau] - mean_val);
+        num += (a[i] - mean_val) * (a[i + tau] - mean_val);
     }
     num / a.len() as f64
 }
 
+#[allow(dead_code)]
 fn autocorr_polars<T>(ca: &ChunkedArray<T>) -> PolarsResult<Series>
 where
     T: PolarsNumericType,
 {
     let ca = ca.cast(&DataType::Float64)?;
-    let ca = ca.f64()?;
-    let signal: Vec<f64> = ca.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+    let ca_f64 = ca.f64()?;
+
+    // Efficient collection
+    let signal: Vec<f64> = ca_f64.into_iter().map(|v| v.unwrap_or(0.0)).collect();
+
     let ac = autocorr(&signal);
     Ok(Series::new("autocorrelation".into(), ac))
 }

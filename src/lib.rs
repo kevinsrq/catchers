@@ -5,9 +5,10 @@
 //!
 //! It is designed to be used as a Python extension via Polars or directly in Rust.
 
-mod expressions;
-mod utils;
 pub mod catchers;
+mod expressions;
+pub mod feature_extraction;
+mod utils;
 
 use pyo3::prelude::*;
 use pyo3_polars::PolarsAllocator;

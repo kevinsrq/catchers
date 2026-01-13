@@ -13,10 +13,10 @@ install-release:
 	source .venv/bin/activate && maturin develop --release
 
 pre-commit:
-	cargo +nightly fmt --all && cargo clippy --all-features
+	cargo fmt --all && cargo clippy --all-features
 	.venv/bin/python -m ruff check . --fix --exit-non-zero-on-fix
-	.venv/bin/python -m ruff format catch tests
-	.venv/bin/mypy catch tests
+	.venv/bin/python -m ruff format polars_catchers tests
+	.venv/bin/python -m mypy polars_catchers tests
 
 test:
 	.venv/bin/python -m pytest tests

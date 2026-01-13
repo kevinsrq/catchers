@@ -7,17 +7,6 @@ resolution-markers = [
 ]
 
 [[package]]
-name = "catchers"
-source = { editable = "." }
-dependencies = [
-    { name = "polars", version = "1.8.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
-    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
-]
-
-[package.metadata]
-requires-dist = [{ name = "polars", specifier = ">=1.8.2" }]
-
-[[package]]
 name = "polars"
 version = "1.8.2"
 source = { registry = "https://pypi.org/simple" }
@@ -61,3 +50,14 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/05/0f/e629713a72999939b7b4bfdbf030a32794db588b04fdf3dc977dd8ea6c53/polars_runtime_32-1.36.1-cp39-abi3-win_amd64.whl", hash = "sha256:cc17101f28c9a169ff8b5b8d4977a3683cd403621841623825525f440b564cf0", size = 44464898, upload-time = "2025-12-10T01:14:08.296Z" },
     { url = "https://files.pythonhosted.org/packages/d1/d8/a12e6aa14f63784cead437083319ec7cece0d5bb9a5bfe7678cc6578b52a/polars_runtime_32-1.36.1-cp39-abi3-win_arm64.whl", hash = "sha256:809e73857be71250141225ddd5d2b30c97e6340aeaa0d445f930e01bef6888dc", size = 39798896, upload-time = "2025-12-10T01:14:11.568Z" },
 ]
+
+[[package]]
+name = "ts-catchers"
+source = { editable = "." }
+dependencies = [
+    { name = "polars", version = "1.8.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.9'" },
+    { name = "polars", version = "1.36.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
+]
+
+[package.metadata]
+requires-dist = [{ name = "polars", specifier = ">=1.6.2" }]
