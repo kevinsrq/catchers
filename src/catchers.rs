@@ -552,14 +552,15 @@ fn fa_generate_tau(n: usize) -> (Vec<f64>, usize) {
         // Original logic was slightly convoluted (while loop).
         // Let's stick to original logic's intent: remove duplicates.
         // The original code uses a shift strategy.
-        let j = i;
+        #[allow(unused_mut)]
+        let mut j = i;
         while j < n_tau - 1 && tau[j] == tau[j + 1] {
             // shift everything left
             for k in j + 1..n_tau {
                 tau[k - 1] = tau[k];
             }
             n_tau -= 1;
-            // Don't advance j, check again
+            // Don't advance j, check again at the same position
         }
     }
 
