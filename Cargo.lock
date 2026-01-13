@@ -248,20 +248,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "catchers"
-version = "0.1.0"
-dependencies = [
- "num-traits",
- "polars",
- "polars-arrow",
- "pyo3",
- "pyo3-polars",
- "realfft",
- "rustfft",
- "serde",
-]
-
-[[package]]
 name = "cc"
 version = "1.2.51"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1427,6 +1413,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a556ac0ee744e61e167f34c1eb0013ce740e0ee6cd8c158b2ec0b518f10e6675"
 dependencies = [
  "planus",
+ "serde",
+]
+
+[[package]]
+name = "polars-catchers"
+version = "0.1.0"
+dependencies = [
+ "num-traits",
+ "polars",
+ "polars-arrow",
+ "pyo3",
+ "pyo3-polars",
+ "realfft",
+ "rustfft",
  "serde",
 ]
 
